@@ -30,19 +30,27 @@ ALLOWED_HOSTS = []
 
 # Application definition
 
-INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
+# These are the apps Django loads.
+# We are NOT using Django admin site.
+# We are using Mongo-friendly versions of auth + contenttypes.
 
+INSTALLED_APPS = [
+    # Mongo versions of Django built-in apps (ObjectId IDs)
+    "config.mongo_apps.MongoContentTypesConfig",
+    "config.mongo_apps.MongoAuthConfig",
+
+    # Normal Django stuff we still need
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+
+    # Your project apps
     "accounts",
     "catalog",
     "orders",
     "payments",
     "reviews",
+    "dashboards",
 ]
 
 MIDDLEWARE = [
@@ -59,14 +67,16 @@ ROOT_URLCONF = 'config.urls'
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+
+        "DIRS": [BASE_DIR / "templates"],  # tells Django to look in backend/templates
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
@@ -76,12 +86,13 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 
 # Database
-# https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+# MongoDB is running in Docker and is reachable on localhost:27017
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+    "default": {
+        "ENGINE": "django_mongodb_backend",   # tells Django to use MongoDB
+        "HOST": "mongodb://localhost:27017",  # Docker maps MongoDB to your Mac
+        "NAME": "brfn_db",                    # the database name inside MongoDB
     }
 }
 
@@ -104,6 +115,8 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Use our custom user model (must be set before creating production data).
+AUTH_USER_MODEL = "accounts.User"
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
@@ -121,3 +134,15 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATICFILES_DIRS = [BASE_DIR / "static"]
+
+# Django normally creates IDs like 1, 2, 3 (BigAutoField).
+# MongoDB does NOT do that. MongoDB uses ObjectId instead.
+DEFAULT_AUTO_FIELD = "django_mongodb_backend.fields.ObjectIdAutoField"
+
+# These two Django apps come with SQL-style migrations.
+# We generate MongoDB-friendly migrations for them.
+MIGRATION_MODULES = {
+    "auth": "mongo_migrations.auth",
+    "contenttypes": "mongo_migrations.contenttypes",
+}
