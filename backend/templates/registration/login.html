@@ -1,0 +1,44 @@
+<!-- templates/registration/login.html -->
+{% extends "layouts/auth_base.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+  <div class="brand">
+    <div class="logo-dot"></div>
+    <h1>BRFN</h1>
+  </div>
+
+  <p class="subtitle">
+    Sign in to manage your account.
+  </p>
+
+  {% if form.errors %}
+    <div class="error">
+      Wrong username or password. Try again.
+    </div>
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+
+    <div class="field">
+      <label for="id_username">Username</label>
+      {{ form.username }}
+    </div>
+
+    <div class="field">
+      <label for="id_password">Password</label>
+      {{ form.password }}
+    </div>
+
+    <input type="hidden" name="next" value="{{ next }}">
+
+    <div class="actions">
+      <button type="submit">Log in</button>
+      <div class="small">
+        Tip: use admin1 / AdminPass123! (from seed_demo).
+      </div>
+    </div>
+  </form>
+{% endblock %}

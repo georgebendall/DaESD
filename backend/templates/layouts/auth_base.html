@@ -1,0 +1,27 @@
+<!-- templates/layouts/auth_base.html -->
+{% load static %}
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}BRFN{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+  </head>
+  <body>
+    <main class="auth-page">
+      <!-- background -->
+      <div class="bg" aria-hidden="true">
+        <div class="blob one"></div>
+        <div class="blob two"></div>
+        <div class="blob three"></div>
+      </div>
+      <div class="grain" aria-hidden="true"></div>
+
+      <!-- content -->
+      <section class="card">
+        {% block content %}{% endblock %}
+      </section>
+    </main>
+  </body>
+</html>
