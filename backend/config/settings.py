@@ -78,6 +78,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "orders.context_processors.cart_item_count",
             ],
         },
     },
@@ -122,6 +123,10 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Use our custom user model (must be set before creating production data).
 AUTH_USER_MODEL = "accounts.User"
+
+LOGIN_REDIRECT_URL = "/admin-dashboard/"
+LOGOUT_REDIRECT_URL = "/accounts/login/"
+LOGIN_URL = "/accounts/login/"
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/

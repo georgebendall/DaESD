@@ -11,4 +11,5 @@ urlpatterns = [
     # Your own pages
     path("", include("dashboards.urls")),
     path("orders/", include("orders.urls")),
+    path("shop/", include("catalog.urls"))
 ]

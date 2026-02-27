@@ -199,3 +199,45 @@ class ProducerOrder(models.Model):
 
     def __str__(self) -> str:
         return f"ProducerOrder {self.id} (producer={self.producer.username})"
+    
+class Cart(models.Model):
+    customer = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="cart",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Cart({self.customer_id})"
+
+    @property
+    def subtotal(self):
+        return sum((item.line_total for item in self.items.all()), 0)
+
+
+class CartItem(models.Model):
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name="items")
+    product = models.ForeignKey("catalog.Product", on_delete=models.PROTECT)
+    quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)], default=1)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["cart", "product"], name="uniq_cart_product")
+        ]
+
+    def __str__(self):
+        return f"CartItem(cart={self.cart_id}, product={self.product_id}, qty={self.quantity})"
+
+    @property
+    def unit_price(self):
+        # uses live product price (simple + fine for now)
+        return getattr(self.product, "price", 0)
+
+    @property
+    def line_total(self):
+        return self.unit_price * self.quantity
