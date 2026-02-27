@@ -1,6 +1,6 @@
 services:
   mongodb:
-    image: mongo:8              # this is MongoDB (the database server)
+    image: mongo:4.4.18              # this is MongoDB (the database server)
     container_name: brfn_mongodb
     ports:
       - "27017:27017"           # Django app connect via localhost

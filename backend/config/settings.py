@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -87,12 +88,16 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 # Database
 
+MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
+MONGODB_DB = os.getenv("MONGODB_DB", "brfn_db")
+
+
 # MongoDB is running in Docker and is reachable on localhost:27017
 DATABASES = {
     "default": {
         "ENGINE": "django_mongodb_backend",   # tells Django to use MongoDB
-        "HOST": "mongodb://localhost:27017",  # Docker maps MongoDB to your Mac
-        "NAME": "brfn_db",                    # the database name inside MongoDB
+        "HOST": MONGODB_URI,  # Docker maps MongoDB to your Mac
+        "NAME": MONGODB_DB,                    # the database name inside MongoDB
     }
 }
 
