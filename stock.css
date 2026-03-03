@@ -1,0 +1,87 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f5f6fa;
+}
+
+/* Header */
+header {
+    background: #607744;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 30px;
+}
+
+.nav-links {
+    list-style: none;
+    display: flex;
+    margin: 0;
+    padding: 0;
+}
+
+.nav-links li a {
+    color: white;
+    text-decoration: none;
+    padding: 10px 15px;
+}
+
+.nav-links li a:hover {
+    background: #34623F;
+}
+
+/* Page layout */
+main {
+    padding: 40px;
+}
+
+h1 {
+    margin-bottom: 20px;
+}
+
+/* Add button */
+.add-btn {
+    margin-bottom: 15px;
+    padding: 10px 16px;
+    border: none;
+    background: #34623F;
+    color: white;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.add-btn:hover {
+    background: #1E2F23;
+}
+
+/* Table */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+th, td {
+    padding: 12px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+}
+
+th {
+    background: #f1f1f1;
+}
+
+/* Delete button */
+.delete-btn {
+    padding: 6px 10px;
+    border: none;
+    background: #dc2626;
+    color: white;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.delete-btn:hover {
+    background: #b91c1c;
+}

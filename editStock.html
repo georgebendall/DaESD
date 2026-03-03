@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edit Stock Item</title>
+<link rel="stylesheet" href="editStock.css">
+</head>
+<body>
+
+<header>
+    <div class="logo">Producer Dashboard</div>
+
+    <nav>
+        <div class="menu-toggle" id="menu-toggle">☰</div>
+
+        <ul class="nav-links" id="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="stock.html">Stock</a></li>
+            <li><a href="login.html">Login</a></li>
+
+            <li class="dropdown">
+                <a href="#">Pages ▾</a>
+                <ul class="dropdown-menu">
+                    <li><a href="#">About</a></li>
+                    <li><a href="#">Contact</a></li>
+                </ul>
+            </li>
+        </ul>
+    </nav>
+</header>
+
+<main>
+    <h1>Product Details</h1>
+
+    <button class="add-btn" onclick="addRecord()">Add Record</button>
+
+    <table id="details-table">
+        <thead>
+            <tr>
+                <th>Date Added</th>
+                <th>Expiry Date</th>
+                <th>Price ($)</th>
+                <th>Location</th>
+                <th>Delete</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Backend will populate -->
+            <tr>
+                <td>2026-02-24</td>
+                <td>2026-12-31</td>
+                <td>10</td>
+                <td>Warehouse A</td>
+                <td>
+                    <button class="delete-btn" onclick="deleteRow(this)">Delete</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</main>
+
+<footer>
+    <p>© 2026 Producer Dashboard</p>
+</footer>
+
+<script>
+const toggle = document.getElementById("menu-toggle");
+const nav = document.getElementById("nav-links");
+
+toggle.addEventListener("click", () => {
+    nav.classList.toggle("active");
+});
+
+const params = new URLSearchParams(window.location.search);
+const itemName = params.get("item");
+
+if (itemName) {
+    document.querySelector("h1").textContent = "Editing: " + itemName;
+}
+
+function addRecord() {
+    const dateAdded = prompt("Enter date added (YYYY-MM-DD):");
+    const expiryDate = prompt("Enter expiry date (YYYY-MM-DD):");
+    const price = prompt("Enter price:");
+    const location = prompt("Enter location:");
+
+    if (!dateAdded || !price || !location) return;
+
+    const table = document
+        .getElementById("details-table")
+        .getElementsByTagName("tbody")[0];
+
+    const newRow = table.insertRow();
+
+    newRow.innerHTML = `
+        <td>${dateAdded}</td>
+        <td>${expiryDate || ""}</td>
+        <td>${price}</td>
+        <td>${location}</td>
+        <td><button class="delete-btn" onclick="deleteRow(this)">Delete</button></td>
+    `;
+}
+
+function deleteRow(button) {
+    const row = button.parentElement.parentElement;
+    row.remove();
+}
+</script>
+
+</body>
+</html>
