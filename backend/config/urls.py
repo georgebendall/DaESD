@@ -1,15 +1,15 @@
 # config/urls.py
-# This file is the "map" of URLs for your site.
-
 from django.urls import path, include
 
 urlpatterns = [
-    # Built-in Django auth pages (login, logout, password reset, etc.)
-    # This creates: /accounts/login/ and /accounts/logout/
+    # Built-in Django auth pages (login, logout, reset, etc.)
     path("accounts/", include("django.contrib.auth.urls")),
 
-    # Your own pages
+    # Your own accounts routes (after-login redirect)
+    path("accounts/", include("accounts.urls")),
+
+    # Your project pages
     path("", include("dashboards.urls")),
     path("orders/", include("orders.urls")),
-    path("shop/", include("catalog.urls"))
+    path("shop/", include("catalog.urls")),
 ]

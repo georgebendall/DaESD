@@ -1,0 +1,107 @@
+{% extends "layouts/auth_base.html" %}
+
+{% block content %}
+<h2>Create Account</h2>
+
+{% if form.errors %}
+  <div class="alert-error">Please fix the errors below.</div>
+{% endif %}
+
+<form method="post" id="registerForm">
+  {% csrf_token %}
+
+  <div class="input-group">
+    <label for="id_role">Account type</label>
+    {{ form.role }} {{ form.role.errors }}
+  </div>
+
+  <div class="input-group">
+    <label for="id_username">Username</label>
+    {{ form.username }} {{ form.username.errors }}
+  </div>
+
+  <div class="input-group">
+    <label for="id_email">Email</label>
+    {{ form.email }} {{ form.email.errors }}
+  </div>
+
+  <div class="input-group">
+    <label for="id_password1">Password</label>
+    {{ form.password1 }} {{ form.password1.errors }}
+    <div class="helper-text">Min 8 chars, uppercase, lowercase, number, symbol.</div>
+  </div>
+
+  <div class="input-group">
+    <label for="id_password2">Confirm password</label>
+    {{ form.password2 }} {{ form.password2.errors }}
+  </div>
+
+  <!-- CUSTOMER FIELDS -->
+  <div id="customerFields" class="role-section" style="display:none;">
+    <div class="input-group">
+      <label for="id_phone">Phone</label>
+      {{ form.phone }} {{ form.phone.errors }}
+    </div>
+
+    <div class="input-group">
+      <label for="id_customer_postcode">Postcode</label>
+      {{ form.customer_postcode }} {{ form.customer_postcode.errors }}
+    </div>
+
+    <div class="check-row">
+      {{ form.terms }}
+      <label for="id_terms">I accept the terms & conditions</label>
+      {{ form.terms.errors }}
+    </div>
+  </div>
+
+  <!-- PRODUCER FIELDS -->
+  <div id="producerFields" class="role-section" style="display:none;">
+    <div class="input-group">
+      <label for="id_business_name">Business name</label>
+      {{ form.business_name }} {{ form.business_name.errors }}
+    </div>
+
+    <div class="input-group">
+      <label for="id_contact_phone">Contact phone</label>
+      {{ form.contact_phone }} {{ form.contact_phone.errors }}
+    </div>
+
+    <div class="input-group">
+      <label for="id_address_line1">Address line 1</label>
+      {{ form.address_line1 }} {{ form.address_line1.errors }}
+    </div>
+
+    <div class="input-group">
+      <label for="id_city">City</label>
+      {{ form.city }} {{ form.city.errors }}
+    </div>
+
+    <div class="input-group">
+      <label for="id_producer_postcode">Postcode</label>
+      {{ form.producer_postcode }} {{ form.producer_postcode.errors }}
+    </div>
+  </div>
+
+  <button type="submit">Create account</button>
+
+  <p class="register-link">
+    Already have an account? <a href="{% url 'login' %}">Login</a>
+  </p>
+</form>
+
+<script>
+  const roleEl = document.getElementById("id_role");
+  const customer = document.getElementById("customerFields");
+  const producer = document.getElementById("producerFields");
+
+  function updateRoleUI(){
+    const v = roleEl.value;
+    customer.style.display = (v === "customer") ? "block" : "none";
+    producer.style.display = (v === "producer") ? "block" : "none";
+  }
+
+  roleEl.addEventListener("change", updateRoleUI);
+  updateRoleUI();
+</script>
+{% endblock %}

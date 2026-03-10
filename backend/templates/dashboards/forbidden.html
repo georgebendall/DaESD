@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Forbidden | BRFN{% endblock %}
+
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+      <div class="glass p-4 p-md-5 text-white">
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <div class="rounded-circle d-flex align-items-center justify-content-center"
+               style="width:46px;height:46px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);">
+            <span style="font-size:22px;">🔒</span>
+          </div>
+          <div>
+            <h1 class="h4 mb-0">Access denied</h1>
+            <div class="text-soft small">Admins only area</div>
+          </div>
+        </div>
+
+        <p class="text-soft mb-4">
+          You don’t have permission to view this page.
+          If you think this is a mistake, log in with an admin account.
+        </p>
+
+        <div class="d-flex flex-wrap gap-2">
+          <a class="btn btn-light btn-round" href="/shop/products/">Go to Store</a>
+          <a class="btn btn-outline-light btn-round" href="/accounts/login/">Login</a>
+        </div>
+
+        {% if request.user.is_authenticated %}
+          <hr class="border-light opacity-25 my-4">
+          <div class="text-soft small">
+            Signed in as <strong class="text-white">{{ request.user.username }}</strong>
+            (role: <strong class="text-white">{{ request.user.role }}</strong>)
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endblock %}
