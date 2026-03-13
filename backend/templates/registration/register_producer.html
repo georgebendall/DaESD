@@ -1,0 +1,83 @@
+{% extends "layouts/auth_base.html" %}
+
+{% block title %}Producer Registration{% endblock %}
+
+{% block content %}
+  <div class="brand">
+    <div class="logo-dot"></div>
+    <h1>BRFN</h1>
+  </div>
+
+  <p class="subtitle">
+    Create a producer account to list and manage products.
+  </p>
+
+  {% if form.errors %}
+    <div class="error">
+      Please correct the errors below.
+    </div>
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+
+    <div class="field">
+      <label for="{{ form.username.id_for_label }}">Username</label>
+      {{ form.username }}
+      {{ form.username.errors }}
+    </div>
+
+    <div class="field">
+      <label for="{{ form.email.id_for_label }}">Email</label>
+      {{ form.email }}
+      {{ form.email.errors }}
+    </div>
+
+    <div class="field">
+      <label for="{{ form.business_name.id_for_label }}">Business Name</label>
+      {{ form.business_name }}
+      {{ form.business_name.errors }}
+    </div>
+
+    <div class="field">
+      <label for="{{ form.contact_phone.id_for_label }}">Contact Phone</label>
+      {{ form.contact_phone }}
+      {{ form.contact_phone.errors }}
+    </div>
+
+    <div class="field">
+      <label for="{{ form.address_line1.id_for_label }}">Address Line 1</label>
+      {{ form.address_line1 }}
+      {{ form.address_line1.errors }}
+    </div>
+
+    <div class="field">
+      <label for="{{ form.city.id_for_label }}">City</label>
+      {{ form.city }}
+      {{ form.city.errors }}
+    </div>
+
+    <div class="field">
+      <label for="{{ form.postcode.id_for_label }}">Postcode</label>
+      {{ form.postcode }}
+      {{ form.postcode.errors }}
+    </div>
+
+    <div class="field">
+      <label for="{{ form.password1.id_for_label }}">Password</label>
+      {{ form.password1 }}
+      {{ form.password1.errors }}
+    </div>
+
+    <div class="field">
+      <label for="{{ form.password2.id_for_label }}">Confirm Password</label>
+      {{ form.password2 }}
+      {{ form.password2.errors }}
+    </div>
+
+    <div class="actions">
+      <button type="submit">Create Producer Account</button>
+      <a class="auth-link-secondary" href="{% url 'login' %}">Back to login</a>
+    </div>
+  </form>
+{% endblock %}

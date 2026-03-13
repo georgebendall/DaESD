@@ -187,6 +187,39 @@ button:hover {
   font-size: 13px;
 }
 
+.auth-link-button,
+.auth-link-secondary {
+  display: block;
+  width: 100%;
+  text-align: center;
+  text-decoration: none;
+  border-radius: 12px;
+  padding: 11px 12px;
+}
+
+.auth-link-button {
+  color: white;
+  font-weight: 600;
+  background: linear-gradient(135deg, var(--accent1), var(--accent2));
+}
+
+.auth-link-button:hover {
+  filter: brightness(1.05);
+}
+
+.auth-link-secondary {
+  color: var(--muted);
+  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(10, 10, 18, 0.35);
+}
+
+ul.errorlist {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  color: #ffb3b3;
+  font-size: 12px;
+}
+
 /* Animations */
 @keyframes float1 {
   0%, 100% { transform: translate(0px, 0px) scale(1); }
