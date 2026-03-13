@@ -1,9 +1,24 @@
 from django.contrib import messages
 from django.contrib.auth import login
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 
 from .forms import CustomerRegistrationForm, ProducerRegistrationForm
 from .models import CustomerProfile, ProducerProfile, User
+
+
+@login_required
+def after_login(request):
+    user = request.user
+    role = getattr(user, "role", "")
+
+    if user.is_staff or role == User.Role.ADMIN:
+        return redirect("/admin-dashboard/")
+
+    if role == User.Role.PRODUCER:
+        return redirect("/shop/products/")
+
+    return redirect("/shop/products/")
 
 
 def register_choice(request):

@@ -124,9 +124,10 @@ AUTH_PASSWORD_VALIDATORS = [
 # Use our custom user model (must be set before creating production data).
 AUTH_USER_MODEL = "accounts.User"
 
-LOGIN_REDIRECT_URL = "/admin-dashboard/"
+LOGIN_REDIRECT_URL = "/accounts/after-login/"
 LOGOUT_REDIRECT_URL = "/accounts/login/"
 LOGIN_URL = "/accounts/login/"
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/

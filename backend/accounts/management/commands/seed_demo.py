@@ -27,6 +27,11 @@ except Exception:
 class Command(BaseCommand):
     help = "Create demo data: users, profiles, catalog, orders, payments, settlements (and optional reviews)."
 
+    # Demo passwords (same for everyone so the team can login easily)
+    ADMIN_PASSWORD = "AdminPass123!"
+    PRODUCER_PASSWORD = "ProducerPass123!"
+    CUSTOMER_PASSWORD = "CustomerPass123!"
+
     def add_arguments(self, parser):
         parser.add_argument(
             "--reset",
@@ -37,11 +42,96 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         reset = options["reset"]
 
-        # Fixed usernames so your team has predictable logins.
-        producer_usernames = ["producer1", "producer2"]
-        customer_usernames = ["customer1", "customer2"]
+        # -------------------------
+        # DEMO USERS
+        # -------------------------
         admin_username = "admin1"
+        customer_usernames = ["customer1", "customer2"]
 
+        producer_specs = [
+            {
+                "username": "producer1",
+                "email": "bristolvalley@example.com",
+                "contact_first": "Sam",
+                "contact_last": "Parker",
+                "business_name": "Bristol Valley Farm",
+                "phone": "07000 100001",
+                "address": "12 Valley Road",
+                "city": "Bristol",
+                "postcode": "BS1 4AB",
+                "products": [
+                    ("Fresh Carrots", "Vegetables", Decimal("1.50"), 20, ["Nuts"]),
+                    ("Seasonal Kale", "Vegetables", Decimal("1.80"), 18, []),
+                    ("Cherry Tomatoes", "Vegetables", Decimal("2.40"), 14, []),
+                ],
+            },
+            {
+                "username": "producer2",
+                "email": "avonorchards@example.com",
+                "contact_first": "Aisha",
+                "contact_last": "Khan",
+                "business_name": "Avon Orchard Co.",
+                "phone": "07000 100002",
+                "address": "8 Orchard Lane",
+                "city": "Bristol",
+                "postcode": "BS4 2CD",
+                "products": [
+                    ("Apple Juice", "Drinks", Decimal("1.99"), 30, []),
+                    ("Pear Juice", "Drinks", Decimal("2.10"), 22, []),
+                    ("Fresh Apples (Bag)", "Vegetables", Decimal("2.80"), 16, []),
+                ],
+            },
+            {
+                "username": "producer3",
+                "email": "cliftonbakery@example.com",
+                "contact_first": "Luca",
+                "contact_last": "Reed",
+                "business_name": "Clifton Artisan Bakery",
+                "phone": "07000 100003",
+                "address": "22 Baker Street",
+                "city": "Bristol",
+                "postcode": "BS8 1EF",
+                "products": [
+                    ("Sourdough Bread", "Bakery", Decimal("3.20"), 12, ["Gluten"]),
+                    ("Croissants (2 pack)", "Bakery", Decimal("2.90"), 10, ["Gluten", "Milk"]),
+                    ("Brownies", "Bakery", Decimal("3.50"), 8, ["Gluten", "Eggs"]),
+                ],
+            },
+            {
+                "username": "producer4",
+                "email": "harboursidedairy@example.com",
+                "contact_first": "Maya",
+                "contact_last": "Evans",
+                "business_name": "Harbour Side Dairy",
+                "phone": "07000 100004",
+                "address": "5 Dockside Way",
+                "city": "Bristol",
+                "postcode": "BS1 6GH",
+                "products": [
+                    ("Organic Milk", "Dairy", Decimal("2.30"), 20, ["Milk"]),
+                    ("Greek Yogurt", "Dairy", Decimal("1.60"), 18, ["Milk"]),
+                    ("Mature Cheddar", "Dairy", Decimal("3.80"), 9, ["Milk"]),
+                ],
+            },
+            {
+                "username": "producer5",
+                "email": "mendipmeats@example.com",
+                "contact_first": "Noah",
+                "contact_last": "Turner",
+                "business_name": "Mendip Pasture Meats",
+                "phone": "07000 100005",
+                "address": "44 Farm Track",
+                "city": "Bristol",
+                "postcode": "BS16 1QY",
+                "products": [
+                    ("Chicken Thighs", "Meat", Decimal("4.50"), 10, []),
+                    ("Beef Mince", "Meat", Decimal("5.20"), 12, []),
+                    ("Pork Sausages", "Meat", Decimal("4.10"), 14, []),
+                ],
+            },
+        ]
+
+        producer_usernames = [p["username"] for p in producer_specs]
         demo_usernames = producer_usernames + customer_usernames + [admin_username]
 
         # -------------------------
@@ -50,8 +140,14 @@ class Command(BaseCommand):
         if reset:
             self.stdout.write("Reset requested. Deleting old demo data...")
 
-            # Delete app data first (no cross-collection filters)
-            # (Deleting all is simplest and avoids MongoDB join-delete limitations.)
+            # If your branch has Cart/CartItem, delete these FIRST (prevents ProtectedError)
+            try:
+                from orders.models import Cart, CartItem  # type: ignore
+                CartItem.objects.all().delete()
+                Cart.objects.all().delete()
+            except Exception:
+                pass
+
             if Review is not None:
                 Review.objects.all().delete()
 
@@ -62,78 +158,88 @@ class Command(BaseCommand):
             OrderItem.objects.all().delete()
             Order.objects.all().delete()
 
+            # Clear catalog
             Product.objects.all().delete()
             Category.objects.all().delete()
             Allergen.objects.all().delete()
 
-            # Now delete demo profiles + demo users WITHOUT user__username joins
+            # Delete demo profiles + demo users WITHOUT cross-collection join deletes
             demo_users_qs = User.objects.filter(username__in=demo_usernames)
             demo_user_ids = list(demo_users_qs.values_list("id", flat=True))
 
-            # Use user_id (stored ObjectId) so we don't query across collections
             CustomerProfile.objects.filter(user_id__in=demo_user_ids).delete()
             ProducerProfile.objects.filter(user_id__in=demo_user_ids).delete()
-
             demo_users_qs.delete()
 
             self.stdout.write("Reset completed.")
 
         # -------------------------
-        # 1) USERS
+        # 1) ADMIN USER (FORCE PASSWORD)
         # -------------------------
         admin_user, _ = User.objects.get_or_create(
             username=admin_username,
-            defaults={
-                "email": "admin1@example.com",
-                "role": User.Role.ADMIN,
-                "is_staff": True,   # allows access to your custom admin dashboard rule
-                "is_superuser": False,
-            },
+            defaults={"email": "admin1@example.com"},
         )
-        # Always ensure password exists
-        if not admin_user.has_usable_password():
-            admin_user.set_password("AdminPass123!")
-            admin_user.save()
+        admin_user.email = "admin1@example.com"
+        admin_user.role = User.Role.ADMIN
+        admin_user.is_staff = True
+        admin_user.is_superuser = False
+        admin_user.is_active = True
+        admin_user.set_password(self.ADMIN_PASSWORD)  # IMPORTANT: force known password
+        admin_user.save()
 
+        # -------------------------
+        # 2) PRODUCERS + PROFILES (FORCE PASSWORD)
+        # -------------------------
         producers: list[User] = []
-        for i, uname in enumerate(producer_usernames, start=1):
-            u, _ = User.objects.get_or_create(
-                username=uname,
-                defaults={
-                    "email": f"{uname}@example.com",
-                    "role": User.Role.PRODUCER,
-                },
-            )
-            if not u.has_usable_password():
-                u.set_password("ProducerPass123!")
-                u.save()
+        producer_product_map: dict[str, list[tuple]] = {}
 
-            ProducerProfile.objects.get_or_create(
+        for spec in producer_specs:
+            u, _ = User.objects.get_or_create(
+                username=spec["username"],
+                defaults={"email": spec["email"]},
+            )
+
+            u.email = spec["email"]
+            u.role = User.Role.PRODUCER
+            u.first_name = spec["contact_first"]
+            u.last_name = spec["contact_last"]
+            u.is_active = True
+            u.set_password(self.PRODUCER_PASSWORD)  # IMPORTANT: force known password
+            u.save()
+
+            ProducerProfile.objects.update_or_create(
                 user=u,
                 defaults={
-                    "business_name": f"Farm {i}",
-                    "contact_phone": f"07000 0000{i}",
-                    "city": "Bristol",
-                    "postcode": "BS16 1QY",
+                    "business_name": spec["business_name"],
+                    "contact_phone": spec["phone"],
+                    "address_line1": spec["address"],
+                    "city": spec["city"],
+                    "postcode": spec["postcode"],
                     "is_approved": True,
                 },
             )
-            producers.append(u)
 
+            producers.append(u)
+            producer_product_map[u.username] = spec["products"]
+
+        # -------------------------
+        # 3) CUSTOMERS + PROFILES (FORCE PASSWORD)
+        # -------------------------
         customers: list[User] = []
         for i, uname in enumerate(customer_usernames, start=1):
             u, _ = User.objects.get_or_create(
                 username=uname,
-                defaults={
-                    "email": f"{uname}@example.com",
-                    "role": User.Role.CUSTOMER,
-                },
+                defaults={"email": f"{uname}@example.com"},
             )
-            if not u.has_usable_password():
-                u.set_password("CustomerPass123!")
-                u.save()
 
-            CustomerProfile.objects.get_or_create(
+            u.email = f"{uname}@example.com"
+            u.role = User.Role.CUSTOMER
+            u.is_active = True
+            u.set_password(self.CUSTOMER_PASSWORD)  # IMPORTANT: force known password
+            u.save()
+
+            CustomerProfile.objects.update_or_create(
                 user=u,
                 defaults={
                     "phone": f"07111 1111{i}",
@@ -143,15 +249,12 @@ class Command(BaseCommand):
             customers.append(u)
 
         # -------------------------
-        # 2) CATALOG
+        # 4) CATALOG (CATEGORIES + ALLERGENS)
         # -------------------------
         category_names = ["Vegetables", "Dairy", "Bakery", "Meat", "Drinks"]
         categories: dict[str, Category] = {}
         for name in category_names:
-            c, _ = Category.objects.get_or_create(
-                name=name,
-                defaults={"slug": slugify(name)},
-            )
+            c, _ = Category.objects.get_or_create(name=name, defaults={"slug": slugify(name)})
             categories[name] = c
 
         allergen_names = ["Milk", "Eggs", "Gluten", "Nuts"]
@@ -160,19 +263,15 @@ class Command(BaseCommand):
             a, _ = Allergen.objects.get_or_create(name=name)
             allergens[name] = a
 
-        product_templates = [
-            ("Fresh Carrots", "Vegetables", Decimal("1.50"), 20, ["Nuts"]),
-            ("Organic Milk", "Dairy", Decimal("2.30"), 15, ["Milk"]),
-            ("Sourdough Bread", "Bakery", Decimal("3.20"), 10, ["Gluten"]),
-            ("Free-range Eggs", "Dairy", Decimal("2.80"), 25, ["Eggs"]),
-            ("Apple Juice", "Drinks", Decimal("1.99"), 18, []),
-        ]
-
+        # -------------------------
+        # 5) PRODUCTS (DIFFERENT PER PRODUCER)
+        # -------------------------
         for p_user in producers:
-            for name, cat_name, price, stock, allergen_list in product_templates:
+            product_list = producer_product_map.get(p_user.username, [])
+            for name, cat_name, price, stock, allergen_list in product_list:
                 prod, _ = Product.objects.get_or_create(
                     producer=p_user,
-                    slug=slugify(name),  # unique per producer by your constraint
+                    slug=slugify(name),
                     defaults={
                         "category": categories[cat_name],
                         "name": name,
@@ -183,7 +282,6 @@ class Command(BaseCommand):
                     },
                 )
 
-                # keep demo data consistent if it already existed
                 prod.category = categories[cat_name]
                 prod.name = name
                 prod.price = price
@@ -193,28 +291,26 @@ class Command(BaseCommand):
 
                 prod.allergens.clear()
                 for aname in allergen_list:
-                    prod.allergens.add(allergens[aname])
+                    if aname in allergens:
+                        prod.allergens.add(allergens[aname])
 
         # -------------------------
-        # 3) ORDERS + ITEMS + PRODUCER SPLIT
+        # 6) ORDERS + ITEMS + PRODUCER SPLIT
         # -------------------------
+        commission_rate = Decimal("0.10")
+
         p1_products = Product.objects.filter(producer=producers[0]).order_by("created_at")
         p2_products = Product.objects.filter(producer=producers[1]).order_by("created_at")
 
-        commission_rate = Decimal("0.10")
-
-        # Order 1: customer1 buys from both producers
         o1 = Order.objects.create(customer=customers[0], status=Order.Status.PAID)
         OrderItem.objects.create(order=o1, product=p1_products.first(), quantity=2, unit_price=p1_products.first().price)
         OrderItem.objects.create(order=o1, product=p2_products.first(), quantity=1, unit_price=p2_products.first().price)
 
-        # Order 2: customer2 buys from producer2 only
         o2 = Order.objects.create(customer=customers[1], status=Order.Status.PAID)
         second_p2 = p2_products.all()[1]
         OrderItem.objects.create(order=o2, product=second_p2, quantity=3, unit_price=second_p2.price)
 
         for order in [o1, o2]:
-            # Create ProducerOrders grouped by product.producer
             by_producer: dict[User, Decimal] = {}
             for item in order.items.all():
                 prod_user = item.product.producer
@@ -230,11 +326,9 @@ class Command(BaseCommand):
                 po.subtotal = subtotal.quantize(Decimal("0.01"))
                 po.save()
 
-            # Totals on order
             order.recalculate_totals(commission_rate=commission_rate)
             order.save()
 
-            # Payment record
             PaymentTransaction.objects.create(
                 order=order,
                 status=PaymentTransaction.Status.SUCCEEDED,
@@ -246,7 +340,7 @@ class Command(BaseCommand):
             )
 
         # -------------------------
-        # 4) WEEKLY SETTLEMENTS
+        # 7) WEEKLY SETTLEMENTS
         # -------------------------
         today = timezone.now().date()
         start = today - timedelta(days=7)
@@ -274,7 +368,7 @@ class Command(BaseCommand):
             )
 
         # -------------------------
-        # 5) OPTIONAL REVIEW
+        # 8) OPTIONAL REVIEW
         # -------------------------
         if Review is not None:
             any_product = Product.objects.first()
@@ -285,9 +379,7 @@ class Command(BaseCommand):
             )
 
         self.stdout.write(self.style.SUCCESS("Demo data created successfully."))
-        self.stdout.write("Logins created:")
-        self.stdout.write("  admin1 / AdminPass123!")
-        self.stdout.write("  producer1 / ProducerPass123!")
-        self.stdout.write("  producer2 / ProducerPass123!")
-        self.stdout.write("  customer1 / CustomerPass123!")
-        self.stdout.write("  customer2 / CustomerPass123!")
+        self.stdout.write("Logins created (use USERNAME, not email):")
+        self.stdout.write(f"  admin1 / {self.ADMIN_PASSWORD}")
+        self.stdout.write(f"  producer1..producer5 / {self.PRODUCER_PASSWORD}")
+        self.stdout.write(f"  customer1..customer2 / {self.CUSTOMER_PASSWORD}")
