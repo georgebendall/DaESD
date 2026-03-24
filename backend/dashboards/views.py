@@ -45,3 +45,47 @@ def customer_dashboard(request):
         "recent_orders": recent_orders,
     }
     return render(request, "dashboards/customer_dashboard.html", context)
+
+#PRODUCER END----------------------------------------------------------------------------------
+@login_required
+def producer_dashboard(request):
+    # Get the role and force it to uppercase for a safe comparison
+    user_role = getattr(request.user, 'role', '').upper()
+
+    if not request.user.is_authenticated or user_role != 'PRODUCER':
+        # This is where the 302 redirect to home is happening!
+        return redirect('home') 
+        
+    return render(request, "dashboards/producer_dashboard.html")
+
+# dashboards/views.py
+
+def producer_stock(request):
+    # Security: Redirect if not a producer
+    if getattr(request.user, 'role', '').upper() != 'PRODUCER':
+        return redirect('home')
+        
+    return render(request, "dashboards/stock.html")
+
+def edit_stock_list(request):
+    # This view would show the list of products specifically for editing their batches
+    products = Product.objects.filter(producer=request.user) # or your specific logic
+    return render(request, "dashboards/editstock.html", {"products": products})
+# dashboards/views.py
+
+def add_product(request):
+    # Temporary placeholder
+    return render(request, "dashboards/add_product.html")
+
+def edit_product(request, product_id):
+    # Temporary placeholder
+    return render(request, "dashboards/edit_product.html")
+
+def delete_product(request, product_id):
+    # Temporary placeholder - usually redirects back to stock after deleting
+    return redirect("producer_stock")
+# dashboards/views.py
+
+def add_stock(request, product_id):
+    # This is a placeholder until you build the actual stock entry form
+    return render(request, "dashboards/add_stock_form.html", {"product_id": product_id})

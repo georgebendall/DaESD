@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Producer Dashboard | BRFN{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Sidebar/Nav styling */
+  .navbar-glass {
+    background: var(--card);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .dashboard-container {
+    padding-top: 100px;
+    min-height: 100vh;
+  }
+
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 24px;
+    transition: transform 0.2s;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--accent1);
+  }
+
+  .btn-producer {
+    background: linear-gradient(135deg, var(--accent1), var(--accent2));
+    color: white;
+    border: none;
+    font-weight: 600;
+    padding: 12px 24px;
+    border-radius: 12px;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .btn-producer:hover {
+    filter: brightness(1.1);
+    color: white;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top navbar-glass">
+  <div class="container">
+    <a class="navbar-brand d-flex align-items-center gap-2" href="#">
+      <div class="logo-dot"></div>
+      <span class="fw-bold">BRFN PRO</span>
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link active" href="{% url 'producer_dashboard' %}">Dashboard</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'producer_stock' %}">Stock</a>
+        </li>
+        <li class="nav-item">
+          <form action="{% url 'logout' %}" method="post" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="nav-link btn btn-link text-soft" style="text-decoration:none;">Logout</button>
+          </form>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container dashboard-container">
+  <div class="row mb-4">
+    <div class="col-12">
+      <h2 class="text-white">Welcome back, {{ request.user.username }}</h2>
+      <p class="text-soft">Here is what's happening with your inventory today.</p>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-md-6">
+      <div class="stat-card h-100">
+        <h4 class="text-white mb-3">Inventory Management</h4>
+        <p class="text-soft">Check current stock levels, update pricing, or mark items as expired.</p>
+        
+        <a href="{% url 'producer_stock' %}" class="btn-producer mt-2">
+          View Stock
+        </a>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="stat-card h-100 text-center">
+        <h6 class="text-soft uppercase">Active Products</h6>
+        <h2 class="text-white mb-0">12</h2>
+      </div>
+    </div>
+    
+    <div class="col-md-3">
+      <div class="stat-card h-100 text-center">
+        <h6 class="text-soft uppercase">Low Stock Alerts</h6>
+        <h2 class="text-danger mb-0">3</h2>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

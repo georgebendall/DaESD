@@ -10,15 +10,19 @@ from .models import CustomerProfile, ProducerProfile, User
 @login_required
 def after_login(request):
     user = request.user
-    role = getattr(user, "role", "")
-
+    role = getattr(user, "role", "")  # Ensure role is uppercase for comparison
+    print(f"DEBUG: User {user.username} has role: '{role}'") # Check your terminal output
     if user.is_staff or role == User.Role.ADMIN:
-        return redirect("/admin-dashboard/")
+        return redirect("admin_dashboard")
 
+    # UPDATE THIS SECTION:
     if role == User.Role.PRODUCER:
-        return redirect("/shop/products/")
+        return redirect("producer_dashboard") # Matches the name in dashboards/urls.py
 
-    return redirect("/shop/products/")
+    if role == User.Role.CUSTOMER:
+        return redirect("customer_dashboard")
+
+    return redirect("home")
 
 
 def register_choice(request):
@@ -47,7 +51,7 @@ def register_customer(request):
 
             login(request, user)
             messages.success(request, "Customer account created successfully.")
-            return redirect("product_list")
+            return redirect("home") # Ensure this name exists in urls.py
     else:
         form = CustomerRegistrationForm()
 
@@ -78,7 +82,7 @@ def register_producer(request):
 
             login(request, user)
             messages.success(request, "Producer account created successfully.")
-            return redirect("product_list")
+            return redirect("producer_dashboard") # Ensure this name exists in urls.py
     else:
         form = ProducerRegistrationForm()
 

@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Add Product | BRFN{% endblock %}
+
+{% block content %}
+<div class="glass p-5 mt-5">
+    <h2 class="text-white">Add New Product</h2>
+    <p class="text-soft">Fill in the details below to add a product to your inventory.</p>
+    
+    <a href="{% url 'producer_stock' %}" class="btn btn-outline-light">Back to Stock</a>
+</div>
+{% endblock %}

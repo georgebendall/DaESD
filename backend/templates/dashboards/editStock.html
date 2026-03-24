@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}Edit Stock | BRFN{% endblock %}
+
+
+{% block extra_head %}
+<style>
+  /* Use the background variable from auth.css */
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+  }
+
+  /* Make the 'glass' container match the 'card' style from auth.css */
+  .glass {
+    background: var(--card);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(14px);
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+  }
+
+  /* Custom styling for your 'Add Record' button to match the login button */
+  .btn-custom-accent {
+    background: linear-gradient(135deg, var(--accent1), var(--accent2));
+    color: white;
+    border: none;
+    transition: filter 0.2s;
+  }
+
+  .btn-custom-accent:hover {
+    filter: brightness(1.1);
+    color: white;
+  }
+
+  /* Soften the table text using your --muted variable */
+  .text-soft {
+    color: var(--muted) !important;
+  }
+  
+  th {
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+  }
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center page-header">
+
+  <div>
+    <h2 class="text-white mb-0">{{ product.name }}</h2>
+    <small class="text-soft">Manage product stock records</small>
+  </div>
+
+  <a href="{% url 'add_stock' product.id %}"
+     class="btn btn-light btn-round">
+    Add Record
+  </a>
+
+</div>
+
+
+<div class="glass p-4">
+
+  <table class="table table-dark table-hover align-middle">
+
+    <thead>
+      <tr>
+        <th>Date Added</th>
+        <th>Expiry Date</th>
+        <th>Price</th>
+        <th>Location</th>
+        <th class="text-end">Actions</th>
+      </tr>
+    </thead>
+
+    <tbody>
+
+      {% for batch in stock_records %}
+
+      <tr>
+
+        <td>{{ batch.date_added }}</td>
+
+        <td>
+          {% if batch.expiry_date %}
+            {{ batch.expiry_date }}
+          {% else %}
+            <span class="text-soft">No expiry</span>
+          {% endif %}
+        </td>
+
+        <td>£{{ batch.price }}</td>
+
+        <td>{{ batch.location }}</td>
+
+        <td class="text-end">
+
+          <a href="{% url 'delete_stock' batch.id %}"
+             class="btn btn-sm btn-danger btn-round">
+            Delete
+          </a>
+
+        </td>
+
+      </tr>
+
+      {% empty %}
+
+      <tr>
+        <td colspan="5" class="text-center text-soft py-4">
+          No stock records found for this product.
+        </td>
+      </tr>
+
+      {% endfor %}
+
+    </tbody>
+
+  </table>
+
+</div>
+
+{% endblock %}
