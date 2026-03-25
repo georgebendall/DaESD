@@ -51,13 +51,13 @@ class Product(models.Model):
 
     producer = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.PROTECT,  # safer than CASCADE: you don't want products deleted by accident
+        on_delete=models.PROTECT,
         related_name="products",
     )
 
     category = models.ForeignKey(
         Category,
-        on_delete=models.PROTECT,  # categories should not be deleted if products exist
+        on_delete=models.PROTECT,
         related_name="products",
     )
 
@@ -69,12 +69,12 @@ class Product(models.Model):
     price = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        validators=[MinValueValidator(0)],  # stops negative prices
+        validators=[MinValueValidator(0)],
     )
 
     stock = models.IntegerField(
         default=0,
-        validators=[MinValueValidator(0)],  # stops negative stock
+        validators=[MinValueValidator(0)],
         help_text="How many units are available right now.",
     )
 
@@ -83,6 +83,11 @@ class Product(models.Model):
         blank=True,
         related_name="products",
         help_text="Optional list of allergens for this product.",
+    )
+
+    is_organic = models.BooleanField(
+        default=False,
+        help_text="Tick if this product is organically certified.",
     )
 
     is_active = models.BooleanField(
@@ -94,8 +99,6 @@ class Product(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        # This helps prevent two products from the same producer having the same slug.
-        # It also helps your teammates safely build URLs later.
         constraints = [
             models.UniqueConstraint(
                 fields=["producer", "slug"],
@@ -104,15 +107,9 @@ class Product(models.Model):
         ]
 
     def clean(self) -> None:
-        """
-        Protect data consistency:
-        - only a producer user can own products
-        """
         if self.producer and getattr(self.producer, "role", None) != User.Role.PRODUCER:
             raise ValidationError("Product.producer must be a user with role='producer'.")
 
-        # Simple extra protection:
-        # If stock is 0, product can still exist, but it's effectively unavailable.
         if self.stock is not None and self.stock < 0:
             raise ValidationError("Stock cannot be negative.")
 

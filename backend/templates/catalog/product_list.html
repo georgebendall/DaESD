@@ -1,206 +1,100 @@
 {% extends "base.html" %}
 {% block content %}
 
-<style>
-  /* Background inspired by ShaderGradient (CSS-only, lightweight) */
-  .shader-bg {
-    position: fixed;
-    inset: 0;
-    z-index: -2;
-    background: radial-gradient(circle at 20% 30%, rgba(86,6,255,.35), transparent 55%),
-                radial-gradient(circle at 80% 40%, rgba(254,137,137,.30), transparent 55%),
-                radial-gradient(circle at 50% 80%, rgba(80,255,210,.12), transparent 55%),
-                #07070a;
-    filter: blur(18px) saturate(115%);
-    animation: drift 10s ease-in-out infinite alternate;
-  }
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h3 class="m-0">Products</h3>
+  <a class="btn btn-outline-secondary" href="{% url 'cart_page' %}">View Cart</a>
+</div>
 
-  .shader-grain {
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    opacity: .12;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)' opacity='.25'/%3E%3C/svg%3E");
-  }
-
-  @keyframes drift {
-    0%   { transform: translate3d(-10px,-8px,0) scale(1.02); }
-    100% { transform: translate3d(12px,10px,0) scale(1.06); }
-  }
-
-  /* Glass wrapper */
-  .glass-wrap {
-    background: rgba(255,255,255,.06);
-    border: 1px solid rgba(255,255,255,.14);
-    border-radius: 18px;
-    backdrop-filter: blur(14px);
-    box-shadow: 0 20px 60px rgba(0,0,0,.35);
-    padding: 18px;
-  }
-
-  .page-title {
-    color: rgba(255,255,255,.92);
-    letter-spacing: .2px;
-  }
-
-  .muted-on-dark {
-    color: rgba(255,255,255,.65) !important;
-  }
-
-  /* Cards */
-  .product-card {
-    border: 1px solid rgba(0,0,0,.08);
-    border-radius: 16px;
-    overflow: hidden;
-  }
-
-  .product-card .card-body {
-    padding: 16px;
-  }
-
-  .price-badge {
-    background: rgba(255,255,255,.9) !important;
-    border: 1px solid rgba(0,0,0,.08);
-    font-weight: 700;
-  }
-
-  /* Producer pill */
-  .producer-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 10px;
-    border-radius: 999px;
-    background: rgba(0,0,0,.04);
-    border: 1px solid rgba(0,0,0,.06);
-    font-size: 12px;
-  }
-
-  .producer-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 999px;
-    background: linear-gradient(135deg, #5606ff, #fe8989);
-    box-shadow: 0 0 14px rgba(254,137,137,.28);
-  }
-
-  .info-btn {
-    border-radius: 12px;
-  }
-
-  /* Make Bootstrap inputs feel nicer */
-  .form-control, .form-select, .btn {
-    border-radius: 12px;
-  }
-
-  /* Modal improvements */
-  .modal-content {
-    border-radius: 18px;
-  }
-</style>
-
-<div class="shader-bg"></div>
-<div class="shader-grain"></div>
-
-<div class="glass-wrap mb-3">
-  <div class="d-flex align-items-center justify-content-between mb-3">
-    <div>
-      <h3 class="m-0 page-title">BRFN Store</h3>
-      <div class="muted-on-dark small">Browse products and see which producer they come from.</div>
-    </div>
-
-    <a class="btn btn-outline-light" href="{% url 'cart_page' %}">View Cart</a>
+<form method="GET" class="row g-2 align-items-end mb-4">
+  <div class="col-12 col-md-4">
+    <label class="form-label">Search</label>
+    <input class="form-control" type="text" name="q" value="{{ q }}" placeholder="Search by name or description">
   </div>
 
-  <form method="GET" class="row g-2 align-items-end">
-    <div class="col-12 col-md-6">
-      <label class="form-label muted-on-dark">Search</label>
-      <input class="form-control" type="text" name="q" value="{{ q }}" placeholder="Search by name or description">
-    </div>
+  <div class="col-12 col-md-3">
+    <label class="form-label">Category</label>
+    <select class="form-select" name="category">
+      <option value="">All categories</option>
+      {% for c in categories %}
+        <option value="{{ c.slug }}" {% if c.slug == category_slug %}selected{% endif %}>
+          {{ c.name }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
 
-    <div class="col-12 col-md-4">
-      <label class="form-label muted-on-dark">Category</label>
-      <select class="form-select" name="category">
-        <option value="">All categories</option>
-        {% for c in categories %}
-          <option value="{{ c.slug }}" {% if c.slug == category_slug %}selected{% endif %}>
-            {{ c.name }}
-          </option>
-        {% endfor %}
-      </select>
-    </div>
+  <div class="col-12 col-md-3">
+    <label class="form-label">Allergen</label>
+    <select class="form-select" name="allergen">
+      <option value="">All allergens</option>
+      {% for a in allergens %}
+        <option value="{{ a.id }}" {% if a.id|stringformat:"s" == selected_allergen %}selected{% endif %}>
+          {{ a.name }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
 
-    <div class="col-12 col-md-2 d-grid">
-      <button class="btn btn-outline-light" type="submit">Filter</button>
+  <div class="col-12 col-md-2">
+    <div class="form-check mt-4">
+      <input class="form-check-input" type="checkbox" name="organic" value="1" id="organicCheck" {% if organic_only == "1" %}checked{% endif %}>
+      <label class="form-check-label" for="organicCheck">
+        Organic only
+      </label>
     </div>
-  </form>
-</div>
+  </div>
+
+  <div class="col-12 d-flex gap-2">
+    <button class="btn btn-outline-primary" type="submit">Filter</button>
+    <a class="btn btn-outline-secondary" href="{% url 'product_list' %}">Clear</a>
+  </div>
+</form>
 
 <div class="row g-3">
   {% for product in page_obj.object_list %}
     <div class="col-12 col-md-6 col-lg-4">
-      <div class="card h-100 product-card">
+      <div class="card h-100 shadow-sm">
         <div class="card-body d-flex flex-column">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <h5 class="card-title mb-1">
+              <a href="{% url 'product_detail' product.id %}" class="text-decoration-none">
+                {{ product.name }}
+              </a>
+            </h5>
+            <span class="badge text-bg-light">£{{ product.price }}</span>
+          </div>
 
-          <div class="d-flex justify-content-between align-items-start">
-            <div>
-              <h5 class="card-title mb-1">{{ product.name }}</h5>
-              <div class="text-muted small mb-2">
-                Category: {{ product.category.name }}
-              </div>
+          <div class="text-muted small mb-2">
+            Category: {{ product.category.name }}
+          </div>
+
+          {% if product.is_organic %}
+            <div class="mb-2">
+              <span class="badge text-bg-success">Organic</span>
             </div>
-            <span class="badge price-badge">£{{ product.price }}</span>
-          </div>
-
-          {# Producer info (works with your ProducerProfile) #}
-          <div class="mb-2">
-            <span class="producer-pill">
-              <span class="producer-dot"></span>
-              <span>
-                <strong>
-                  {% if product.producer.producer_profile.business_name %}
-                    {{ product.producer.producer_profile.business_name }}
-                  {% else %}
-                    {{ product.producer.username }}
-                  {% endif %}
-                </strong>
-                <span class="text-muted">
-                  • {{ product.producer.first_name }} {{ product.producer.last_name }}
-                  • {{ product.producer.producer_profile.postcode }}
-                </span>
-              </span>
-            </span>
-
-            <button
-              type="button"
-              class="btn btn-sm btn-outline-secondary ms-2 info-btn"
-              data-bs-toggle="modal"
-              data-bs-target="#producerModal"
-              data-business="{% if product.producer.producer_profile.business_name %}{{ product.producer.producer_profile.business_name }}{% else %}{{ product.producer.username }}{% endif %}"
-              data-contact="{{ product.producer.first_name }} {{ product.producer.last_name }}"
-              data-email="{{ product.producer.email }}"
-              data-phone="{{ product.producer.producer_profile.contact_phone }}"
-              data-address="{{ product.producer.producer_profile.address_line1 }}"
-              data-city="{{ product.producer.producer_profile.city }}"
-              data-postcode="{{ product.producer.producer_profile.postcode }}"
-            >
-              Info
-            </button>
-          </div>
+          {% endif %}
 
           {% if product.description %}
             <p class="card-text text-muted">{{ product.description|truncatechars:120 }}</p>
           {% endif %}
 
-          {% if product.allergens.all %}
-            <div class="mb-2 small">
-              <span class="text-muted">Allergens:</span>
-              {% for a in product.allergens.all %}
-                <span class="badge text-bg-warning">{{ a.name }}</span>
-              {% endfor %}
-            </div>
-          {% endif %}
+          <div class="mb-3 small">
+            <div class="fw-semibold mb-1">Allergen warning</div>
+
+            {% if product.allergens.all %}
+              <div class="alert alert-warning py-2 px-3 mb-0">
+                Contains:
+                {% for a in product.allergens.all %}
+                  <span class="badge text-bg-warning border me-1">{{ a.name }}</span>
+                {% endfor %}
+              </div>
+            {% else %}
+              <div class="alert alert-success py-2 px-3 mb-0">
+                No common allergens
+              </div>
+            {% endif %}
+          </div>
 
           <div class="mt-auto">
             <div class="d-flex justify-content-between align-items-center">
@@ -208,16 +102,20 @@
                 Stock: {{ product.stock }}
               </div>
 
-              {% if product.stock > 0 %}
-                <form method="POST" action="{% url 'cart_add' product.id %}" class="d-flex gap-2">
-                  {% csrf_token %}
-                  <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                  <input type="number" name="quantity" value="1" min="1" class="form-control" style="width: 88px;">
-                  <button type="submit" class="btn btn-success">Add</button>
-                </form>
-              {% else %}
-                <button class="btn btn-secondary" disabled>Out of stock</button>
-              {% endif %}
+              <div class="d-flex gap-2">
+                <a href="{% url 'product_detail' product.id %}" class="btn btn-outline-primary btn-sm">View</a>
+
+                {% if product.stock > 0 %}
+                  <form method="POST" action="{% url 'cart_add' product.id %}" class="d-flex gap-2">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <input type="number" name="quantity" value="1" min="1" class="form-control" style="width: 88px;">
+                    <button type="submit" class="btn btn-success btn-sm">Add</button>
+                  </form>
+                {% else %}
+                  <button class="btn btn-secondary btn-sm" disabled>Out of stock</button>
+                {% endif %}
+              </div>
             </div>
           </div>
 
@@ -236,7 +134,7 @@
     <ul class="pagination">
       {% if page_obj.has_previous %}
         <li class="page-item">
-          <a class="page-link" href="?q={{ q }}&category={{ category_slug }}&page={{ page_obj.previous_page_number }}">Previous</a>
+          <a class="page-link" href="?q={{ q }}&category={{ category_slug }}&allergen={{ selected_allergen }}&organic={{ organic_only }}&page={{ page_obj.previous_page_number }}">Previous</a>
         </li>
       {% else %}
         <li class="page-item disabled"><span class="page-link">Previous</span></li>
@@ -248,7 +146,7 @@
 
       {% if page_obj.has_next %}
         <li class="page-item">
-          <a class="page-link" href="?q={{ q }}&category={{ category_slug }}&page={{ page_obj.next_page_number }}">Next</a>
+          <a class="page-link" href="?q={{ q }}&category={{ category_slug }}&allergen={{ selected_allergen }}&organic={{ organic_only }}&page={{ page_obj.next_page_number }}">Next</a>
         </li>
       {% else %}
         <li class="page-item disabled"><span class="page-link">Next</span></li>
@@ -256,55 +154,5 @@
     </ul>
   </nav>
 {% endif %}
-
-{# Producer info modal (Bootstrap modal) #}
-<div class="modal fade" id="producerModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Producer details</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <div class="mb-2"><strong id="pBusiness">—</strong></div>
-        <div class="text-muted small mb-3" id="pContact">—</div>
-
-        <div class="small">
-          <div><span class="text-muted">Email:</span> <span id="pEmail">—</span></div>
-          <div><span class="text-muted">Phone:</span> <span id="pPhone">—</span></div>
-          <div class="mt-2"><span class="text-muted">Address:</span> <span id="pAddress">—</span></div>
-          <div><span class="text-muted">City:</span> <span id="pCity">—</span></div>
-          <div><span class="text-muted">Postcode:</span> <span id="pPostcode">—</span></div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script>
-  // Tiny JS to fill the producer modal from the clicked button
-  document.addEventListener("DOMContentLoaded", function () {
-    const modal = document.getElementById("producerModal");
-    if (!modal) return;
-
-    modal.addEventListener("show.bs.modal", function (event) {
-      const button = event.relatedTarget;
-      if (!button) return;
-
-      const get = (name) => button.getAttribute("data-" + name) || "—";
-
-      document.getElementById("pBusiness").textContent = get("business");
-      document.getElementById("pContact").textContent = get("contact");
-      document.getElementById("pEmail").textContent = get("email");
-      document.getElementById("pPhone").textContent = get("phone");
-      document.getElementById("pAddress").textContent = get("address");
-      document.getElementById("pCity").textContent = get("city");
-      document.getElementById("pPostcode").textContent = get("postcode");
-    });
-  });
-</script>
 
 {% endblock %}

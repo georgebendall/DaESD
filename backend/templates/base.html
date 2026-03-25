@@ -92,26 +92,29 @@
       <!-- Right side -->
       <div class="d-flex gap-2">
 
-        {% if request.user.is_authenticated %}
-          <span class="text-soft me-2 align-self-center">
-            Hi, {{ request.user.username }}
-          </span>
+  {% if request.user.is_authenticated %}
+    <span class="text-soft me-2 align-self-center">
+      Hi, {{ request.user.username }}
+    </span>
 
-          <a class="btn btn-outline-light btn-sm btn-round" href="/accounts/logout/">
-            Logout
-          </a>
+    <form method="post" action="{% url 'logout' %}" class="m-0">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-outline-light btn-sm btn-round">
+        Logout
+      </button>
+    </form>
 
-        {% else %}
-          <a class="btn btn-outline-light btn-sm btn-round" href="/accounts/login/">
-            Login
-          </a>
+  {% else %}
+    <a class="btn btn-outline-light btn-sm btn-round" href="/accounts/login/">
+      Login
+    </a>
 
-          <a class="btn btn-light btn-sm btn-round" href="/accounts/register/">
-            Sign Up
-          </a>
-        {% endif %}
+    <a class="btn btn-light btn-sm btn-round" href="/accounts/register/">
+      Sign Up
+    </a>
+  {% endif %}
 
-      </div>
+</div>
 
     </div>
   </div>

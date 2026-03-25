@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="mb-3">
+  <a href="{% url 'product_list' %}" class="btn btn-outline-secondary btn-sm">Back to products</a>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-start mb-3">
+      <div>
+        <h2 class="mb-1">{{ product.name }}</h2>
+        <div class="text-muted">Category: {{ product.category.name }}</div>
+      </div>
+      <div class="text-end">
+        <div class="h4 mb-2">£{{ product.price }}</div>
+        {% if product.is_organic %}
+          <span class="badge text-bg-success">Organic</span>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if product.description %}
+      <p>{{ product.description }}</p>
+    {% endif %}
+
+    <div class="mb-4">
+      <h5>Allergen information</h5>
+
+      {% if product.allergens.all %}
+        <div class="alert alert-warning">
+          <strong>Warning:</strong> This product contains:
+          {% for a in product.allergens.all %}
+            <span class="badge text-bg-warning border me-1">{{ a.name }}</span>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="alert alert-success">
+          No common allergens.
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center">
+      <div class="text-muted">
+        Stock available: {{ product.stock }}
+      </div>
+
+      {% if product.stock > 0 %}
+        <form method="POST" action="{% url 'cart_add' product.id %}" class="d-flex gap-2">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <input type="number" name="quantity" value="1" min="1" class="form-control" style="width: 100px;">
+          <button type="submit" class="btn btn-success">Add to cart</button>
+        </form>
+      {% else %}
+        <button class="btn btn-secondary" disabled>Out of stock</button>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% endblock %}
