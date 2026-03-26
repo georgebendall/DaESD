@@ -10,6 +10,9 @@ class User(AbstractUser):
     We keep Django's normal user fields (username, password, etc.)
     and add a role so the rest of the system knows what the user can do.
     """
+    producer_business_name = models.CharField(max_length=120, blank=True),
+    producer_address_line = models.CharField(max_length=255, blank=True),
+    producer_postcode = models.CharField(max_length=12, blank=True),
 
     class Role(models.TextChoices):
         CUSTOMER = "customer", "Customer"
@@ -23,6 +26,8 @@ class User(AbstractUser):
         default=Role.CUSTOMER,
         db_index=True,
         help_text="Defines whether this user is a customer, producer, or admin.",
+        
+        
     )
 
     # Make email unique so one email cannot be used for multiple accounts.
