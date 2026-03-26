@@ -108,7 +108,9 @@
         <a class="nav-link text-soft" href="/">Home</a>
         <a class="nav-link text-soft" href="/shop/products/">Store</a>
         <a class="nav-link text-soft" href="/orders/cart/">Cart</a>
-        <a class="nav-link text-soft" href="/dashboards/">Dashboard</a>
+        {% if request.user.is_authenticated %}
+  <a class="nav-link text-soft" href="{% url 'after_login' %}">Dashboard</a>
+{% endif %}
 
       </div>
 
@@ -120,12 +122,21 @@
       Hi, {{ request.user.username }}
     </span>
 
+<<<<<<< Updated upstream
     <form method="post" action="{% url 'logout' %}" class="m-0">
       {% csrf_token %}
       <button type="submit" class="btn btn-outline-light btn-sm btn-round">
         Logout
       </button>
     </form>
+=======
+          <form action="{% url 'logout' %}" method="post" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-light btn-sm btn-round">
+              Logout
+            </button>
+          </form>
+>>>>>>> Stashed changes
 
   {% else %}
     <a class="btn btn-outline-light btn-sm btn-round" href="/accounts/login/">
