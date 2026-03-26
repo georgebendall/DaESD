@@ -11,7 +11,18 @@
     <label class="form-label">Search</label>
     <input class="form-control" type="text" name="q" value="{{ q }}" placeholder="Search by name or description">
   </div>
-
+  <form method="get" class="row g-2 mb-3">
+    <div class="col-md-6">
+      <select name="category" class="form-select" onchange="this.form.submit()">
+        <option value="">All categories</option>
+        {% for c in categories %}
+          <option value="{{ c.id }}" {% if selected_category == c.id|stringformat:"s" %}selected{% endif %}>
+            {{ c.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+  </form>
   <div class="col-12 col-md-3">
     <label class="form-label">Category</label>
     <select class="form-select" name="category">
@@ -58,8 +69,7 @@
         <div class="card-body d-flex flex-column">
           <div class="d-flex justify-content-between align-items-start mb-2">
             <h5 class="card-title mb-1">
-              <a href="{% url 'product_detail' product.id %}" class="text-decoration-none">
-                {{ product.name }}
+              <a href="{% url 'product_detail' product.id %}">{{ product.name }}</a>
               </a>
             </h5>
             <span class="badge text-bg-light">£{{ product.price }}</span>
