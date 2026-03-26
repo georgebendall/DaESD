@@ -4,6 +4,20 @@ from django.shortcuts import get_object_or_404, render
 
 from .models import Allergen, Category, Product
 
+def product_list(request):
+    category_id = request.GET.get("category", "")
+    products = Product.objects.filter(is_active=True)
+
+    if category_id:
+        products = products.filter(category_id=category_id)
+
+    categories = Category.objects.order_by("name")
+
+    return render(request, "catalog/product_list.html", {
+        "products": products.order_by("name"),
+        "categories": categories,
+        "selected_category": category_id,
+    })
 
 def product_list_page(request):
     q = (request.GET.get("q") or "").strip()

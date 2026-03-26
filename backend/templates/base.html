@@ -122,21 +122,12 @@
       Hi, {{ request.user.username }}
     </span>
 
-<<<<<<< Updated upstream
     <form method="post" action="{% url 'logout' %}" class="m-0">
       {% csrf_token %}
       <button type="submit" class="btn btn-outline-light btn-sm btn-round">
         Logout
       </button>
     </form>
-=======
-          <form action="{% url 'logout' %}" method="post" class="d-inline">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-outline-light btn-sm btn-round">
-              Logout
-            </button>
-          </form>
->>>>>>> Stashed changes
 
   {% else %}
     <a class="btn btn-outline-light btn-sm btn-round" href="/accounts/login/">

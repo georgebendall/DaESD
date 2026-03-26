@@ -1,3 +1,5 @@
+# backend/catalog/models.py
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
@@ -11,6 +13,25 @@ class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(max_length=120, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def _generate_unique_slug(self) -> str:
+        base = slugify(self.name) or "category"
+        base = base[:120]  # ensure it fits
+        slug = base
+        i = 2
+
+        while Category.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+            suffix = f"-{i}"
+            slug = (base[: 120 - len(suffix)] + suffix)
+            i += 1
+
+        return slug
+
+    def save(self, *args, **kwargs):
+        # ✅ Auto-generate slug if not provided
+        if not self.slug and self.name:
+            self.slug = self._generate_unique_slug()
+        super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         return self.name
@@ -100,6 +121,7 @@ class Product(models.Model):
         ]
 
     def clean(self) -> None:
+        # Producer must be producer-role user
         if self.producer and getattr(self.producer, "role", None) != User.Role.PRODUCER:
             raise ValidationError("Product.producer must be a user with role='producer'.")
 

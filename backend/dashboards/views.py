@@ -1,5 +1,8 @@
+# backend/dashboards/views.py
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
@@ -83,11 +86,10 @@ def producer_stock(request):
         return redirect_response
 
     products = (
-        Product.objects.filter(producer=request.user)
-        .select_related("category")
-        .prefetch_related("allergens")
-        .order_by("name")
-    )
+    Product.objects.filter(producer=request.user)
+    .select_related("category")
+    .order_by("name")
+)
 
     return render(request, "dashboards/stock.html", {"products": products})
 
@@ -105,8 +107,15 @@ def add_product(request):
 
     if request.method == "POST":
         form = ProducerProductForm(request.POST, user=request.user)
+
+       
+        form.instance.producer = request.user
+
         if form.is_valid():
-            product = form.save()
+            product = form.save(commit=False)
+            product.producer = request.user  
+            product.save()
+            form.save_m2m()
 
             messages.success(request, f"{product.name} was added successfully.")
             if product.is_low_stock:
@@ -143,6 +152,10 @@ def edit_product(request, product_id):
 
     if request.method == "POST":
         form = ProducerProductForm(request.POST, instance=product, user=request.user)
+
+        # keep producer safe
+        form.instance.producer = request.user
+
         if form.is_valid():
             updated_product = form.save()
 

@@ -23,7 +23,14 @@
     {% if product.description %}
       <p>{{ product.description }}</p>
     {% endif %}
-
+    <div class="mt-3">
+      <h5>Producer location</h5>
+      {% if product.producer.producer_city or product.producer.producer_postcode %}
+        <p>{{ product.producer.producer_city }} {{ product.producer.producer_postcode }}</p>
+      {% else %}
+        <p class="text-muted">Location not provided.</p>
+      {% endif %}
+    </div> 
     <div class="mb-4">
       <h5>Allergen information</h5>
 

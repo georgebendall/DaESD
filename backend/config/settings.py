@@ -29,23 +29,19 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 
-# Application definition
 
-# These are the apps Django loads.
-# We are NOT using Django admin site.
-# We are using Mongo-friendly versions of auth + contenttypes.
 
 INSTALLED_APPS = [
-    # Mongo versions of Django built-in apps (ObjectId IDs)
+   
     "config.mongo_apps.MongoContentTypesConfig",
     "config.mongo_apps.MongoAuthConfig",
 
-    # Normal Django stuff we still need
+  
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
 
-    # Your project apps
+    
     "accounts",
     "catalog",
     "orders",
@@ -70,7 +66,7 @@ TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
 
-        "DIRS": [BASE_DIR / "templates"],  # tells Django to look in backend/templates
+        "DIRS": [BASE_DIR / "templates"],  
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -96,9 +92,9 @@ MONGODB_DB = os.getenv("MONGODB_DB", "brfn_db")
 # MongoDB is running in Docker and is reachable on localhost:27017
 DATABASES = {
     "default": {
-        "ENGINE": "django_mongodb_backend",   # tells Django to use MongoDB
-        "HOST": MONGODB_URI,  # Docker maps MongoDB to your Mac
-        "NAME": MONGODB_DB,                    # the database name inside MongoDB
+        "ENGINE": "django_mongodb_backend",   
+        "HOST": MONGODB_URI, 
+        "NAME": MONGODB_DB,                   
     }
 }
 
@@ -121,7 +117,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# Use our custom user model (must be set before creating production data).
+
 AUTH_USER_MODEL = "accounts.User"
 
 LOGIN_REDIRECT_URL = "/accounts/after-login/"

@@ -53,20 +53,25 @@ class ProducerProductForm(forms.ModelForm):
         self.user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
 
+        # ✅ Populate dropdowns
         self.fields["category"].queryset = Category.objects.order_by("name")
         self.fields["allergens"].queryset = Allergen.objects.order_by("name")
+
+        # ✅ CRITICAL: set producer BEFORE validation happens
+        # so Product.clean() doesn't crash
+        if self.user and not self.instance.pk:
+            self.instance.producer = self.user
 
     def save(self, commit=True):
         product = super().save(commit=False)
 
-        if self.user and not product.pk:
-            product.producer = self.user
-
+        # ✅ Always enforce producer from logged-in user
         if self.user:
+            product.producer = self.user
             product.slug = _build_unique_slug(
                 self.user,
                 product.name,
-                getattr(product, "pk", None),
+                product.pk,
             )
 
         if commit:
