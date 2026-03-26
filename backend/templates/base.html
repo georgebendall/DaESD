@@ -55,6 +55,29 @@
       }
 
       .btn-round { border-radius: 999px; }
+      /* Product cards */
+.product-card {
+  border-radius: 16px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.product-card img {
+  height: 200px;
+  width: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+/* Hover effect */
+.product-card:hover {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 25px 70px rgba(0,0,0,0.6);
+}
+
+.product-card:hover img {
+  transform: scale(1.08);
+}
     </style>
 
     {% block extra_head %}{% endblock %}

@@ -42,7 +42,15 @@ class Order(models.Model):
         default=Status.PENDING,
         db_index=True,
     )
+    is_recurring_instance = models.BooleanField(default=False)
 
+    recurring_template = models.ForeignKey(
+        "RecurringOrder",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="generated_orders"
+    )
     # Snapshot money fields.
     # subtotal = sum of item line totals
     # commission_total = platform fee
@@ -241,3 +249,46 @@ class CartItem(models.Model):
     @property
     def line_total(self):
         return self.unit_price * self.quantity
+    
+   # TEMPLATE (recurring setup)
+class RecurringOrder(models.Model):
+    """
+    Template for weekly/fortnightly orders.
+    """
+
+    customer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="recurring_orders",
+    )
+
+    name = models.CharField(max_length=100, default="Weekly Order")
+
+    recurrence = models.CharField(
+        max_length=20,
+        choices=[("weekly", "Weekly"), ("fortnightly", "Fortnightly")]
+    )
+
+    order_day = models.CharField(max_length=10)
+    delivery_day = models.CharField(max_length=10)
+
+    is_active = models.BooleanField(default=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.customer})"
+
+
+class RecurringOrderItem(models.Model):
+    recurring_order = models.ForeignKey(
+        RecurringOrder,
+        on_delete=models.CASCADE,
+        related_name="items"
+    )
+
+    product = models.ForeignKey("catalog.Product", on_delete=models.PROTECT)
+    quantity = models.PositiveIntegerField(default=1)
+
+    def __str__(self):
+        return f"{self.product} x {self.quantity}"
