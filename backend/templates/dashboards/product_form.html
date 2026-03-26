@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} | BRFN{% endblock %}
+
+{% block content %}
+<div class="glass p-4 mt-4" style="max-width: 900px; margin-inline: auto;">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="text-white mb-1">{{ page_title }}</h2>
+      <p class="text-soft mb-0">
+        Update stock, availability, and inventory settings.
+      </p>
+    </div>
+
+    <a href="{% url 'producer_stock' %}" class="btn btn-outline-light btn-round">Back</a>
+  </div>
+
+  {% if form.errors %}
+    <div class="alert alert-danger">
+      Please fix the errors below.
+      {{ form.non_field_errors }}
+    </div>
+  {% endif %}
+
+  <form method="post" class="row g-3">
+    {% csrf_token %}
+
+    <div class="col-md-6">
+      <label class="form-label text-white">Product Name</label>
+      {{ form.name }}
+      {% if form.name.errors %}<div class="text-warning small mt-1">{{ form.name.errors }}</div>{% endif %}
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label text-white">Category</label>
+      {{ form.category }}
+      {% if form.category.errors %}<div class="text-warning small mt-1">{{ form.category.errors }}</div>{% endif %}
+    </div>
+
+    <div class="col-12">
+      <label class="form-label text-white">Description</label>
+      {{ form.description }}
+      {% if form.description.errors %}<div class="text-warning small mt-1">{{ form.description.errors }}</div>{% endif %}
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label text-white">Price</label>
+      {{ form.price }}
+      {% if form.price.errors %}<div class="text-warning small mt-1">{{ form.price.errors }}</div>{% endif %}
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label text-white">Stock Quantity</label>
+      {{ form.stock }}
+      {% if form.stock.errors %}<div class="text-warning small mt-1">{{ form.stock.errors }}</div>{% endif %}
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label text-white">Low Stock Threshold</label>
+      {{ form.stock_warning_level }}
+      {% if form.stock_warning_level.errors %}<div class="text-warning small mt-1">{{ form.stock_warning_level.errors }}</div>{% endif %}
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label text-white">Availability Status</label>
+      {{ form.availability_status }}
+      {% if form.availability_status.errors %}<div class="text-warning small mt-1">{{ form.availability_status.errors }}</div>{% endif %}
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label text-white">Allergens</label>
+      {{ form.allergens }}
+      {% if form.allergens.errors %}<div class="text-warning small mt-1">{{ form.allergens.errors }}</div>{% endif %}
+    </div>
+
+    <div class="col-12 d-flex justify-content-end gap-2 mt-3">
+      <a href="{% url 'producer_stock' %}" class="btn btn-outline-light">Cancel</a>
+      <button type="submit" class="btn btn-success">{{ submit_label }}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
