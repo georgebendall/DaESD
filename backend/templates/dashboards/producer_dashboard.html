@@ -3,33 +3,21 @@
 
 {% block extra_head %}
 <style>
-  /* Sidebar/Nav styling */
-  .navbar-glass {
-    background: var(--card);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border);
-  }
-
   .dashboard-container {
-    padding-top: 100px;
     min-height: 100vh;
   }
 
   .stat-card {
-    background: var(--card);
-    border: 1px solid var(--border);
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.14);
     border-radius: 18px;
     padding: 24px;
-    transition: transform 0.2s;
-  }
-
-  .stat-card:hover {
-    transform: translateY(-5px);
-    border-color: var(--accent1);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 20px 60px rgba(0,0,0,.35);
   }
 
   .btn-producer {
-    background: linear-gradient(135deg, var(--accent1), var(--accent2));
+    background: linear-gradient(135deg, #5f8f52, #3a6b35);
     color: white;
     border: none;
     font-weight: 600;
@@ -47,65 +35,101 @@
 {% endblock %}
 
 {% block content %}
-<nav class="navbar navbar-expand-lg navbar-dark fixed-top navbar-glass">
-  <div class="container">
-    <a class="navbar-brand d-flex align-items-center gap-2" href="#">
-      <div class="logo-dot"></div>
-      <span class="fw-bold">BRFN PRO</span>
-    </a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item">
-          <a class="nav-link active" href="{% url 'producer_dashboard' %}">Dashboard</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{% url 'producer_stock' %}">Stock</a>
-        </li>
-        <li class="nav-item">
-          <form action="{% url 'logout' %}" method="post" class="d-inline">
-            {% csrf_token %}
-            <button type="submit" class="nav-link btn btn-link text-soft" style="text-decoration:none;">Logout</button>
-          </form>
-        </li>
-      </ul>
-    </div>
-  </div>
-</nav>
-
 <div class="container dashboard-container">
   <div class="row mb-4">
     <div class="col-12">
       <h2 class="text-white">Welcome back, {{ request.user.username }}</h2>
-      <p class="text-soft">Here is what's happening with your inventory today.</p>
+      <p class="text-soft">Manage your products and track stock in real time.</p>
     </div>
   </div>
 
-  <div class="row g-4">
-    <div class="col-md-6">
-      <div class="stat-card h-100">
-        <h4 class="text-white mb-3">Inventory Management</h4>
-        <p class="text-soft">Check current stock levels, update pricing, or mark items as expired.</p>
-        
-        <a href="{% url 'producer_stock' %}" class="btn-producer mt-2">
-          View Stock
-        </a>
+  <div class="row g-4 mb-4">
+    <div class="col-md-4">
+      <div class="stat-card h-100 text-center">
+        <h6 class="text-soft">Total Products</h6>
+        <h2 class="text-white mb-0">{{ products_count }}</h2>
       </div>
     </div>
 
-    <div class="col-md-3">
+    <div class="col-md-4">
       <div class="stat-card h-100 text-center">
-        <h6 class="text-soft uppercase">Active Products</h6>
-        <h2 class="text-white mb-0">12</h2>
+        <h6 class="text-soft">Active Products</h6>
+        <h2 class="text-white mb-0">{{ active_products_count }}</h2>
       </div>
     </div>
-    
-    <div class="col-md-3">
+
+    <div class="col-md-4">
       <div class="stat-card h-100 text-center">
-        <h6 class="text-soft uppercase">Low Stock Alerts</h6>
-        <h2 class="text-danger mb-0">3</h2>
+        <h6 class="text-soft">Low Stock Alerts</h6>
+        <h2 class="text-danger mb-0">{{ low_stock_count }}</h2>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-md-6">
+      <div class="stat-card h-100">
+        <h4 class="text-white mb-3">Inventory Management</h4>
+        <p class="text-soft">Check current stock levels, update pricing, and manage your products.</p>
+
+        <div class="d-flex gap-2 flex-wrap">
+          <a href="{% url 'producer_stock' %}" class="btn-producer">View Stock</a>
+          <a href="{% url 'add_product' %}" class="btn btn-outline-light">Add Product</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="stat-card h-100">
+        <h4 class="text-white mb-3">Low Stock Products</h4>
+
+        {% if low_stock_products %}
+          <ul class="list-group list-group-flush">
+            {% for product in low_stock_products %}
+              <li class="list-group-item bg-transparent text-white border-secondary d-flex justify-content-between">
+                <span>{{ product.name }}</span>
+                <span class="text-warning">Stock: {{ product.stock }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-soft mb-0">No low stock alerts right now.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12">
+      <div class="stat-card">
+        <h4 class="text-white mb-3">Recent Products</h4>
+
+        {% if recent_products %}
+          <div class="table-responsive">
+            <table class="table table-dark table-hover align-middle">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Category</th>
+                  <th>Stock</th>
+                  <th>Price</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for product in recent_products %}
+                  <tr>
+                    <td>{{ product.name }}</td>
+                    <td>{{ product.category.name }}</td>
+                    <td>{{ product.stock }}</td>
+                    <td>£{{ product.price }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-soft mb-0">You do not have any products yet.</p>
+        {% endif %}
       </div>
     </div>
   </div>

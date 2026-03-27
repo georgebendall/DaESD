@@ -1,43 +1,13 @@
-from django.shortcuts import render, get_object_or_404, redirect
-from .models import Order
-from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_POST
-from django.http import Http404
-from payments.models import PaymentTransaction
-from django.conf import settings
-from django.utils.http import url_has_allowed_host_and_scheme
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.http import Http404
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.views.decorators.http import require_POST
 
-
-
-
-def order_detail_page(request, order_id):
-    order = get_object_or_404(Order, id=order_id)
-
-    return render(request, "orders/order_detail.html", {
-        "order": order
-    })
-def payment_page(request, order_id):
-    order = get_object_or_404(Order, id=order_id)
-
-    if request.method == "POST":
-        # Simulate payment success
-        PaymentTransaction.objects.create(
-            order=order,
-            amount=order.total,
-            status=PaymentTransaction.Status.SUCCEEDED,  # use your enum
-            provider="manual",
-            currency="GBP",
-        )
-
-        order.status = "paid"
-        order.save()
-
-        return redirect("order_detail", order_id=order.id)
-
-    return render(request, "orders/payment_page.html", {
-        "order": order
-    })
+from accounts.models import User
+from payments.models import PaymentTransaction
+from .models import Order
 
 try:
     from bson import ObjectId
@@ -46,11 +16,6 @@ except Exception:
 
 
 def _maybe_objectid(value: str):
-    """
-    Your project uses Mongo-style ObjectIds for some models.
-    This converts '65f1...' into ObjectId(...) when bson is available.
-    If not, it returns the original string.
-    """
     if ObjectId is None:
         return value
     try:
@@ -59,18 +24,73 @@ def _maybe_objectid(value: str):
         raise Http404("Invalid id format")
 
 
+def _customer_only_or_redirect(request):
+    if not request.user.is_authenticated:
+        return redirect("login")
+    if getattr(request.user, "role", "") != User.Role.CUSTOMER:
+        return redirect("after_login")
+    return None
+
+
+@login_required
+def order_detail_page(request, order_id):
+    oid = _maybe_objectid(order_id)
+    order = get_object_or_404(Order, id=oid)
+
+    if order.customer != request.user and not request.user.is_staff and getattr(request.user, "role", "") != User.Role.ADMIN:
+        return redirect("after_login")
+
+    return render(request, "orders/order_detail.html", {"order": order})
+
+
+@login_required
+def payment_page(request, order_id):
+    redirect_response = _customer_only_or_redirect(request)
+    if redirect_response:
+        return redirect_response
+
+    oid = _maybe_objectid(order_id)
+    order = get_object_or_404(Order, id=oid, customer=request.user)
+
+    if request.method == "POST":
+        PaymentTransaction.objects.create(
+            order=order,
+            amount=order.total,
+            status=PaymentTransaction.Status.SUCCEEDED,
+            provider="manual",
+            currency="GBP",
+        )
+
+        order.status = "paid"
+        order.save()
+
+        messages.success(request, "Payment completed successfully.")
+        return redirect("order_detail", order_id=order.id)
+
+    return render(request, "orders/payment_page.html", {"order": order})
+
+
 @login_required
 def cart_page(request):
-    from .models import Cart
-    cart, _ = Cart.objects.get_or_create(customer=request.user)
+    redirect_response = _customer_only_or_redirect(request)
+    if redirect_response:
+        return redirect_response
 
-    continue_url = request.session.get("last_product_list_url", "/shop/products/")  # adjust if you use /products/
+    from .models import Cart
+
+    cart, _ = Cart.objects.get_or_create(customer=request.user)
+    continue_url = request.session.get("last_product_list_url", "/shop/products/")
+
     return render(request, "orders/cart.html", {"cart": cart, "continue_url": continue_url})
 
 
 @login_required
 @require_POST
 def cart_add(request, product_id):
+    redirect_response = _customer_only_or_redirect(request)
+    if redirect_response:
+        return redirect_response
+
     from .models import Cart, CartItem
     from catalog.models import Product
 
@@ -85,28 +105,39 @@ def cart_add(request, product_id):
         qty = 1
 
     pid = _maybe_objectid(product_id)
-    product = get_object_or_404(Product, id=pid)
+    product = get_object_or_404(Product, id=pid, is_active=True)
+
+    if qty > product.stock:
+        messages.error(request, f"Only {product.stock} left in stock for {product.name}.")
+        next_url = request.POST.get("next") or request.GET.get("next") or "product_list"
+        if isinstance(next_url, str) and next_url.startswith("/"):
+            return redirect(next_url)
+        return redirect("product_list")
 
     item, created = CartItem.objects.get_or_create(cart=cart, product=product)
-    if created:
-        item.quantity = qty
+    new_qty = qty if created else item.quantity + qty
+
+    if new_qty > product.stock:
+        messages.error(request, f"You cannot add more than {product.stock} of {product.name}.")
     else:
-        item.quantity += qty
-    item.save()
+        item.quantity = new_qty
+        item.save()
+        messages.success(request, f"Added {qty} × {product.name} to your cart.")
 
-    messages.success(request, f"Added {qty} × {product.name} to your cart.")
-
-    # ✅ redirect back to originating page if provided
     next_url = request.POST.get("next") or request.GET.get("next")
     if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
         return redirect(next_url)
 
-    return redirect("product_list")  # sensible fallback
+    return redirect("product_list")
 
 
 @login_required
 @require_POST
 def cart_update(request, item_id):
+    redirect_response = _customer_only_or_redirect(request)
+    if redirect_response:
+        return redirect_response
+
     from .models import CartItem
 
     iid = _maybe_objectid(item_id)
@@ -120,9 +151,13 @@ def cart_update(request, item_id):
 
     if qty < 1:
         item.delete()
+        messages.info(request, "Item removed from cart.")
+    elif qty > item.product.stock:
+        messages.error(request, f"Only {item.product.stock} left in stock for {item.product.name}.")
     else:
         item.quantity = qty
         item.save()
+        messages.success(request, "Cart updated.")
 
     return redirect("cart_page")
 
@@ -130,9 +165,82 @@ def cart_update(request, item_id):
 @login_required
 @require_POST
 def cart_remove(request, item_id):
+    redirect_response = _customer_only_or_redirect(request)
+    if redirect_response:
+        return redirect_response
+
     from .models import CartItem
 
     iid = _maybe_objectid(item_id)
     item = get_object_or_404(CartItem, id=iid, cart__customer=request.user)
     item.delete()
+    messages.info(request, "Item removed from cart.")
     return redirect("cart_page")
+
+
+@login_required
+@require_POST
+def checkout_now(request):
+    redirect_response = _customer_only_or_redirect(request)
+    if redirect_response:
+        return redirect_response
+
+    from .models import Cart, Order, OrderItem, ProducerOrder
+
+    cart, _ = Cart.objects.get_or_create(customer=request.user)
+    cart_items = list(cart.items.select_related("product", "product__producer"))
+
+    if not cart_items:
+        messages.error(request, "Your cart is empty.")
+        return redirect("cart_page")
+
+    for item in cart_items:
+        if not item.product.is_active:
+            messages.error(request, f"{item.product.name} is no longer available.")
+            return redirect("cart_page")
+
+        if item.quantity > item.product.stock:
+            messages.error(
+                request,
+                f"Only {item.product.stock} left in stock for {item.product.name}."
+            )
+            return redirect("cart_page")
+
+    order = Order.objects.create(
+        customer=request.user,
+        status=Order.Status.PENDING,
+    )
+
+    touched_producers = set()
+
+    for item in cart_items:
+        product = item.product
+
+        OrderItem.objects.create(
+            order=order,
+            product=product,
+            quantity=item.quantity,
+            unit_price=product.price,
+        )
+
+        product.stock = product.stock - item.quantity
+        product.save()
+
+        touched_producers.add(product.producer_id)
+
+    order.recalculate_totals()
+    order.save()
+
+    for producer_id in touched_producers:
+        producer_order = ProducerOrder.objects.create(
+            parent_order=order,
+            producer_id=producer_id,
+            status=ProducerOrder.Status.PENDING,
+        )
+        producer_order.recalculate_subtotal()
+        producer_order.save()
+
+    cart.items.all().delete()
+
+    messages.success(request, "Checkout completed. Please complete payment.")
+    return redirect("payment_page", order_id=order.id)

@@ -4,20 +4,10 @@ from django.shortcuts import get_object_or_404, render
 
 from .models import Allergen, Category, Product
 
+
 def product_list(request):
-    category_id = request.GET.get("category", "")
-    products = Product.objects.filter(is_active=True)
+    return product_list_page(request)
 
-    if category_id:
-        products = products.filter(category_id=category_id)
-
-    categories = Category.objects.order_by("name")
-
-    return render(request, "catalog/product_list.html", {
-        "products": products.order_by("name"),
-        "categories": categories,
-        "selected_category": category_id,
-    })
 
 def product_list_page(request):
     q = (request.GET.get("q") or "").strip()
@@ -25,13 +15,18 @@ def product_list_page(request):
     allergen_id = (request.GET.get("allergen") or "").strip()
     organic_only = (request.GET.get("organic") or "").strip()
 
-    qs = Product.objects.filter(is_active=True)
+    qs = Product.objects.filter(is_active=True).select_related("category", "producer")
 
     if category_slug:
         qs = qs.filter(category__slug=category_slug)
 
     if q:
-        qs = qs.filter(Q(name__icontains=q) | Q(description__icontains=q))
+        qs = qs.filter(
+            Q(name__icontains=q)
+            | Q(description__icontains=q)
+            | Q(producer__username__icontains=q)
+            | Q(producer__producer_profile__business_name__icontains=q)
+        )
 
     if allergen_id:
         qs = qs.filter(allergens__id=allergen_id)
@@ -39,7 +34,7 @@ def product_list_page(request):
     if organic_only == "1":
         qs = qs.filter(is_organic=True)
 
-    qs = qs.distinct().order_by("-created_at")
+    qs = qs.distinct().order_by("name")
 
     paginator = Paginator(qs, 12)
     page_obj = paginator.get_page(request.GET.get("page") or 1)
@@ -54,6 +49,7 @@ def product_list_page(request):
         "catalog/product_list.html",
         {
             "page_obj": page_obj,
+            "products": page_obj.object_list,
             "q": q,
             "category_slug": category_slug,
             "categories": categories,
@@ -66,10 +62,10 @@ def product_list_page(request):
 
 def product_detail_page(request, product_id):
     product = get_object_or_404(
-    Product.objects,
-    id=product_id,
-    is_active=True,
-)
+        Product.objects.select_related("category", "producer"),
+        id=product_id,
+        is_active=True,
+    )
 
     return render(
         request,

@@ -1,11 +1,26 @@
 services:
+  web:
+    build: ./backend
+    container_name: brfn_web
+    working_dir: /app
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017
+      MONGODB_DB: brfn_db
+    depends_on:
+      - mongodb
+
   mongodb:
-    image: mongo:7.0              # this is MongoDB (the database server)
+    image: mongo:7.0
     container_name: brfn_mongodb
     ports:
-      - "27017:27017"           # Django app connect via localhost
+      - "27017:27017"
     volumes:
-      - mongo_data:/data/db     # keeps data saved even after restart
+      - mongo_data:/data/db
 
 volumes:
   mongo_data:
