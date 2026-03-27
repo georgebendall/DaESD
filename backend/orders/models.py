@@ -1,8 +1,3 @@
-# orders/models.py
-# This file defines everything about ordering.
-# Goal: support "one checkout" where a customer buys from multiple producers,
-# and we split it into ProducerOrder records (one per producer).
-
 from decimal import Decimal
 
 from django.conf import settings
@@ -15,17 +10,13 @@ from accounts.models import User
 
 class Order(models.Model):
     """
-    The main order placed by a customer at checkout.
-
-    This is the "parent" order. It can contain products from multiple producers.
-
-    We store money totals on the order so old orders do not change later.
-    (If product prices change, the order totals stay the same.)
+    Main order placed by a customer.
+    Can contain products from multiple producers.
     """
 
     class Status(models.TextChoices):
-        PENDING = "pending", "Pending"         # created but not paid yet
-        PAID = "paid", "Paid"                 # payment confirmed
+        PENDING = "pending", "Pending"
+        PAID = "paid", "Paid"
         PROCESSING = "processing", "Processing"
         COMPLETED = "completed", "Completed"
         CANCELLED = "cancelled", "Cancelled"
@@ -42,6 +33,7 @@ class Order(models.Model):
         default=Status.PENDING,
         db_index=True,
     )
+
     is_recurring_instance = models.BooleanField(default=False)
 
     recurring_template = models.ForeignKey(
@@ -49,12 +41,9 @@ class Order(models.Model):
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
-        related_name="generated_orders"
+        related_name="generated_orders",
     )
-    # Snapshot money fields.
-    # subtotal = sum of item line totals
-    # commission_total = platform fee
-    # total = subtotal + commission_total
+
     subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
     commission_total = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
     total = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
@@ -62,26 +51,15 @@ class Order(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def clean(self) -> None:
-        """
-        Keep role logic consistent:
-        only a customer can place an Order.
-        """
         if self.customer and getattr(self.customer, "role", None) != User.Role.CUSTOMER:
             raise ValidationError("Order.customer must be a user with role='customer'.")
 
-    def recalculate_totals(self, commission_rate: Decimal = Decimal("0.10")) -> None:
-        """
-        Recalculate subtotal, commission, total.
-
-        commission_rate is a simple percentage, e.g. 0.10 for 10%.
-        We save totals so they are stable and do not change over time.
-        """
+    def recalculate_totals(self, commission_rate: Decimal = Decimal("0.05")) -> None:
         subtotal = Decimal("0.00")
 
         for item in self.items.all():
             subtotal += item.line_total
 
-        # Keep money to 2 decimal places
         subtotal = subtotal.quantize(Decimal("0.01"))
         commission = (subtotal * commission_rate).quantize(Decimal("0.01"))
         total = (subtotal + commission).quantize(Decimal("0.01"))
@@ -97,9 +75,7 @@ class Order(models.Model):
 class OrderItem(models.Model):
     """
     One product line inside an order.
-
-    We store unit_price at the moment of purchase (snapshot),
-    so price changes later do not change historical orders.
+    Stores unit_price snapshot at purchase time.
     """
 
     order = models.ForeignKey(
@@ -127,17 +103,23 @@ class OrderItem(models.Model):
     )
 
     @property
+    def producer(self):
+        return self.product.producer if self.product else None
+
+    @property
     def line_total(self) -> Decimal:
         return (self.unit_price * self.quantity).quantize(Decimal("0.01"))
 
     def clean(self) -> None:
-        """
-        Basic consistency:
-        - producer role should own the product (product.producer.role == producer)
-        - (stock rules are enforced during checkout logic, not here)
-        """
         if self.product and getattr(self.product.producer, "role", None) != User.Role.PRODUCER:
             raise ValidationError("OrderItem.product must belong to a producer user.")
+
+        if self.product and not self.product.is_active:
+            raise ValidationError("This product is not currently available.")
+
+        if self.product and self.quantity and self.product.stock is not None:
+            if self.quantity > self.product.stock:
+                raise ValidationError(f"Only {self.product.stock} left in stock for {self.product.name}.")
 
     def __str__(self) -> str:
         return f"{self.quantity} x {self.product.name}"
@@ -145,16 +127,7 @@ class OrderItem(models.Model):
 
 class ProducerOrder(models.Model):
     """
-    A sub-order created from the main Order, one per producer.
-
-    Example:
-    - Customer buys from Producer A and Producer B in one checkout.
-    - We create 2 ProducerOrder rows linked to the same parent order.
-
-    This helps:
-    - producers see only their part
-    - status can be tracked per producer (packed/dispatched)
-    - settlements can be calculated per producer
+    One sub-order per producer for a parent order.
     """
 
     class Status(models.TextChoices):
@@ -183,14 +156,10 @@ class ProducerOrder(models.Model):
         db_index=True,
     )
 
-    # Subtotal for just this producer’s items.
-    # This is stored for reporting/settlement (stable over time).
     subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
-
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        # Prevent duplicates: one ProducerOrder per producer per parent order
         constraints = [
             models.UniqueConstraint(
                 fields=["parent_order", "producer"],
@@ -199,15 +168,19 @@ class ProducerOrder(models.Model):
         ]
 
     def clean(self) -> None:
-        """
-        Ensure producer role correctness.
-        """
         if self.producer and getattr(self.producer, "role", None) != User.Role.PRODUCER:
             raise ValidationError("ProducerOrder.producer must be a user with role='producer'.")
 
+    def recalculate_subtotal(self) -> None:
+        subtotal = Decimal("0.00")
+        for item in self.parent_order.items.filter(product__producer=self.producer):
+            subtotal += item.line_total
+        self.subtotal = subtotal.quantize(Decimal("0.01"))
+
     def __str__(self) -> str:
         return f"ProducerOrder {self.id} (producer={self.producer.username})"
-    
+
+
 class Cart(models.Model):
     customer = models.OneToOneField(
         settings.AUTH_USER_MODEL,
@@ -217,18 +190,35 @@ class Cart(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def clean(self) -> None:
+        if self.customer and getattr(self.customer, "role", None) != User.Role.CUSTOMER:
+            raise ValidationError("Cart.customer must be a user with role='customer'.")
+
+    @property
+    def subtotal(self) -> Decimal:
+        return sum((item.line_total for item in self.items.all()), Decimal("0.00"))
+
     def __str__(self):
         return f"Cart({self.customer_id})"
 
-    @property
-    def subtotal(self):
-        return sum((item.line_total for item in self.items.all()), 0)
-
 
 class CartItem(models.Model):
-    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name="items")
-    product = models.ForeignKey("catalog.Product", on_delete=models.PROTECT)
-    quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)], default=1)
+    cart = models.ForeignKey(
+        Cart,
+        on_delete=models.CASCADE,
+        related_name="items",
+    )
+
+    product = models.ForeignKey(
+        "catalog.Product",
+        on_delete=models.PROTECT,
+        related_name="cart_items",
+    )
+
+    quantity = models.PositiveIntegerField(
+        validators=[MinValueValidator(1)],
+        default=1,
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -238,19 +228,29 @@ class CartItem(models.Model):
             models.UniqueConstraint(fields=["cart", "product"], name="uniq_cart_product")
         ]
 
+    def clean(self) -> None:
+        if self.cart and getattr(self.cart.customer, "role", None) != User.Role.CUSTOMER:
+            raise ValidationError("CartItem.cart must belong to a customer cart.")
+
+        if self.product and not self.product.is_active:
+            raise ValidationError("This product is not currently available.")
+
+        if self.product and self.quantity and self.product.stock is not None:
+            if self.quantity > self.product.stock:
+                raise ValidationError(f"Only {self.product.stock} left in stock for {self.product.name}.")
+
+    @property
+    def unit_price(self) -> Decimal:
+        return getattr(self.product, "price", Decimal("0.00"))
+
+    @property
+    def line_total(self) -> Decimal:
+        return (self.unit_price * self.quantity).quantize(Decimal("0.01"))
+
     def __str__(self):
         return f"CartItem(cart={self.cart_id}, product={self.product_id}, qty={self.quantity})"
 
-    @property
-    def unit_price(self):
-        # uses live product price (simple + fine for now)
-        return getattr(self.product, "price", 0)
 
-    @property
-    def line_total(self):
-        return self.unit_price * self.quantity
-    
-   # TEMPLATE (recurring setup)
 class RecurringOrder(models.Model):
     """
     Template for weekly/fortnightly orders.
@@ -266,15 +266,18 @@ class RecurringOrder(models.Model):
 
     recurrence = models.CharField(
         max_length=20,
-        choices=[("weekly", "Weekly"), ("fortnightly", "Fortnightly")]
+        choices=[("weekly", "Weekly"), ("fortnightly", "Fortnightly")],
     )
 
     order_day = models.CharField(max_length=10)
     delivery_day = models.CharField(max_length=10)
 
     is_active = models.BooleanField(default=True)
-
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def clean(self) -> None:
+        if self.customer and getattr(self.customer, "role", None) != User.Role.CUSTOMER:
+            raise ValidationError("RecurringOrder.customer must be a user with role='customer'.")
 
     def __str__(self):
         return f"{self.name} ({self.customer})"
@@ -284,11 +287,20 @@ class RecurringOrderItem(models.Model):
     recurring_order = models.ForeignKey(
         RecurringOrder,
         on_delete=models.CASCADE,
-        related_name="items"
+        related_name="items",
     )
 
-    product = models.ForeignKey("catalog.Product", on_delete=models.PROTECT)
+    product = models.ForeignKey(
+        "catalog.Product",
+        on_delete=models.PROTECT,
+        related_name="recurring_items",
+    )
+
     quantity = models.PositiveIntegerField(default=1)
+
+    def clean(self) -> None:
+        if self.product and not self.product.is_active:
+            raise ValidationError("Recurring orders can only include active products.")
 
     def __str__(self):
         return f"{self.product} x {self.quantity}"

@@ -1,5 +1,3 @@
-# backend/catalog/models.py
-
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
@@ -16,19 +14,18 @@ class Category(models.Model):
 
     def _generate_unique_slug(self) -> str:
         base = slugify(self.name) or "category"
-        base = base[:120]  # ensure it fits
+        base = base[:120]
         slug = base
         i = 2
 
         while Category.objects.filter(slug=slug).exclude(pk=self.pk).exists():
             suffix = f"-{i}"
-            slug = (base[: 120 - len(suffix)] + suffix)
+            slug = base[: 120 - len(suffix)] + suffix
             i += 1
 
         return slug
 
     def save(self, *args, **kwargs):
-        # ✅ Auto-generate slug if not provided
         if not self.slug and self.name:
             self.slug = self._generate_unique_slug()
         super().save(*args, **kwargs)
@@ -51,12 +48,18 @@ class Product(models.Model):
         OUT_OF_SEASON = "out_of_season", "Out of Season"
         UNAVAILABLE = "unavailable", "Unavailable"
 
+    class Unit(models.TextChoices):
+        EACH = "each", "Each"
+        KG = "kg", "Kilogram"
+        G = "g", "Gram"
+        L = "l", "Litre"
+        ML = "ml", "Millilitre"
+
     producer = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
         related_name="products",
     )
-
     category = models.ForeignKey(
         Category,
         on_delete=models.PROTECT,
@@ -64,9 +67,15 @@ class Product(models.Model):
     )
 
     name = models.CharField(max_length=140)
-    slug = models.SlugField(max_length=160)
-
+    slug = models.SlugField(max_length=160, blank=True)
     description = models.TextField(blank=True)
+
+    unit = models.CharField(
+        max_length=10,
+        choices=Unit.choices,
+        default=Unit.EACH,
+        help_text="How this product is sold.",
+    )
 
     price = models.DecimalField(
         max_digits=10,
@@ -74,10 +83,12 @@ class Product(models.Model):
         validators=[MinValueValidator(0)],
     )
 
-    stock = models.IntegerField(
+    stock = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
         default=0,
         validators=[MinValueValidator(0)],
-        help_text="How many units are available right now.",
+        help_text="How much stock is available right now.",
     )
 
     availability_status = models.CharField(
@@ -87,7 +98,9 @@ class Product(models.Model):
         help_text="Controls whether customers should see this product.",
     )
 
-    stock_warning_level = models.PositiveIntegerField(
+    stock_warning_level = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
         default=5,
         help_text="Low stock alert threshold for this product.",
     )
@@ -121,7 +134,6 @@ class Product(models.Model):
         ]
 
     def clean(self) -> None:
-        # Producer must be producer-role user
         if self.producer and getattr(self.producer, "role", None) != User.Role.PRODUCER:
             raise ValidationError("Product.producer must be a user with role='producer'.")
 
@@ -147,7 +159,7 @@ class Product(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self) -> str:
-        return f"{self.name} (producer={self.producer.username})"
+        return f"{self.name} ({self.unit}) - producer={self.producer.username}"
 
 
 class ProductInventoryHistory(models.Model):
@@ -163,9 +175,8 @@ class ProductInventoryHistory(models.Model):
         blank=True,
         related_name="inventory_changes_made",
     )
-
-    old_stock = models.IntegerField(default=0)
-    new_stock = models.IntegerField(default=0)
+    old_stock = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    new_stock = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     old_availability_status = models.CharField(max_length=30, blank=True)
     new_availability_status = models.CharField(max_length=30, blank=True)

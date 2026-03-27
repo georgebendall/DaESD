@@ -1,8 +1,6 @@
-# backend/dashboards/views.py
-
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
+from django.db.models import F
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
@@ -14,15 +12,32 @@ from .forms import ProducerProductForm
 
 @login_required
 def admin_dashboard(request):
-    if not request.user.is_staff:
+    if not (request.user.is_staff or getattr(request.user, "role", "") == User.Role.ADMIN):
         return render(request, "dashboards/forbidden.html", status=403)
-    return render(request, "dashboards/admin_dashboard.html")
+
+    total_products = Product.objects.count()
+    active_products = Product.objects.filter(is_active=True).count()
+    total_orders = Order.objects.count()
+    total_customers = User.objects.filter(role=User.Role.CUSTOMER).count()
+    total_producers = User.objects.filter(role=User.Role.PRODUCER).count()
+    total_admins = User.objects.filter(role=User.Role.ADMIN).count()
+
+    context = {
+        "display_role": "Admin",
+        "total_products": total_products,
+        "active_products": active_products,
+        "total_orders": total_orders,
+        "total_customers": total_customers,
+        "total_producers": total_producers,
+        "total_admins": total_admins,
+    }
+    return render(request, "dashboards/admin_dashboard.html", context)
 
 
 @login_required
 def customer_dashboard(request):
-    if getattr(request.user, "role", "") != "customer":
-        return redirect("/accounts/after-login/")
+    if getattr(request.user, "role", "") != User.Role.CUSTOMER:
+        return redirect("after_login")
 
     user = request.user
     products_count = Product.objects.filter(is_active=True).count()
@@ -32,9 +47,10 @@ def customer_dashboard(request):
 
     cart_items = 0
     try:
-        from orders.models import Cart, CartItem
+        from orders.models import Cart
         cart = Cart.objects.filter(customer=user).first()
-        cart_items = CartItem.objects.filter(cart=cart).count() if cart else 0
+        if cart:
+            cart_items = cart.items.count()
     except Exception:
         cart_items = 0
 
@@ -67,13 +83,13 @@ def producer_dashboard(request):
         .order_by("-updated_at")
     )
 
-    low_stock_products = [p for p in products_qs if p.is_low_stock]
+    low_stock_qs = products_qs.filter(stock__lte=F("stock_warning_level"))
 
     context = {
         "products_count": products_qs.count(),
         "active_products_count": products_qs.filter(is_active=True).count(),
-        "low_stock_count": len(low_stock_products),
-        "low_stock_products": low_stock_products[:5],
+        "low_stock_count": low_stock_qs.count(),
+        "low_stock_products": low_stock_qs[:5],
         "recent_products": products_qs[:5],
     }
     return render(request, "dashboards/producer_dashboard.html", context)
@@ -86,12 +102,20 @@ def producer_stock(request):
         return redirect_response
 
     products = (
-    Product.objects.filter(producer=request.user)
-    .select_related("category")
-    .order_by("name")
-)
+        Product.objects.filter(producer=request.user)
+        .select_related("category")
+        .order_by("name")
+    )
 
-    return render(request, "dashboards/stock.html", {"products": products})
+    return render(
+        request,
+        "dashboards/stock.html",
+        {
+            "products": products,
+            "products_count": products.count(),
+            "low_stock_count": products.filter(stock__lte=F("stock_warning_level")).count(),
+        },
+    )
 
 
 @login_required
@@ -107,13 +131,11 @@ def add_product(request):
 
     if request.method == "POST":
         form = ProducerProductForm(request.POST, user=request.user)
-
-       
         form.instance.producer = request.user
 
         if form.is_valid():
             product = form.save(commit=False)
-            product.producer = request.user  
+            product.producer = request.user
             product.save()
             form.save_m2m()
 
@@ -152,8 +174,6 @@ def edit_product(request, product_id):
 
     if request.method == "POST":
         form = ProducerProductForm(request.POST, instance=product, user=request.user)
-
-        # keep producer safe
         form.instance.producer = request.user
 
         if form.is_valid():
