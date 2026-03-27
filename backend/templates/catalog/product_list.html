@@ -1,28 +1,20 @@
 {% extends "base.html" %}
+{% block title %}Store | BRFN{% endblock %}
 {% block content %}
 
 <div class="d-flex align-items-center justify-content-between mb-3">
   <h3 class="m-0">Products</h3>
-  <a class="btn btn-outline-secondary" href="{% url 'cart_page' %}">View Cart</a>
+  {% if request.user.is_authenticated and request.user.role == "customer" %}
+    <a class="btn btn-outline-secondary" href="{% url 'cart_page' %}">View Cart</a>
+  {% endif %}
 </div>
 
 <form method="GET" class="row g-2 align-items-end mb-4">
   <div class="col-12 col-md-4">
     <label class="form-label">Search</label>
-    <input class="form-control" type="text" name="q" value="{{ q }}" placeholder="Search by name or description">
+    <input class="form-control" type="text" name="q" value="{{ q }}" placeholder="Search by product, description, or producer">
   </div>
-  <form method="get" class="row g-2 mb-3">
-    <div class="col-md-6">
-      <select name="category" class="form-select" onchange="this.form.submit()">
-        <option value="">All categories</option>
-        {% for c in categories %}
-          <option value="{{ c.id }}" {% if selected_category == c.id|stringformat:"s" %}selected{% endif %}>
-            {{ c.name }}
-          </option>
-        {% endfor %}
-      </select>
-    </div>
-  </form>
+
   <div class="col-12 col-md-3">
     <label class="form-label">Category</label>
     <select class="form-select" name="category">
@@ -50,9 +42,7 @@
   <div class="col-12 col-md-2">
     <div class="form-check mt-4">
       <input class="form-check-input" type="checkbox" name="organic" value="1" id="organicCheck" {% if organic_only == "1" %}checked{% endif %}>
-      <label class="form-check-label" for="organicCheck">
-        Organic only
-      </label>
+      <label class="form-check-label" for="organicCheck">Organic only</label>
     </div>
   </div>
 
@@ -70,13 +60,30 @@
           <div class="d-flex justify-content-between align-items-start mb-2">
             <h5 class="card-title mb-1">
               <a href="{% url 'product_detail' product.id %}">{{ product.name }}</a>
-              </a>
             </h5>
-            <span class="badge text-bg-light">£{{ product.price }}</span>
+            <span class="badge text-bg-light">£{{ product.price|floatformat:2 }}</span>
           </div>
 
           <div class="text-muted small mb-2">
             Category: {{ product.category.name }}
+          </div>
+
+          <div class="small mb-2">
+            <strong>Producer:</strong>
+            {% if product.producer.producer_profile.business_name %}
+              {{ product.producer.producer_profile.business_name }}
+            {% else %}
+              {{ product.producer.username }}
+            {% endif %}
+          </div>
+
+          <div class="small text-muted mb-2">
+            Postcode:
+            {% if product.producer.producer_profile.postcode %}
+              {{ product.producer.producer_profile.postcode }}
+            {% else %}
+              Not provided
+            {% endif %}
           </div>
 
           {% if product.is_organic %}
@@ -90,7 +97,7 @@
           {% endif %}
 
           <div class="mb-3 small">
-            <div class="fw-semibold mb-1">Allergen warning</div>
+            <div class="fw-semibold mb-1">Allergen information</div>
 
             {% if product.allergens.all %}
               <div class="alert alert-warning py-2 px-3 mb-0">
@@ -101,7 +108,7 @@
               </div>
             {% else %}
               <div class="alert alert-success py-2 px-3 mb-0">
-                No common allergens
+                No common allergens listed
               </div>
             {% endif %}
           </div>
@@ -115,15 +122,17 @@
               <div class="d-flex gap-2">
                 <a href="{% url 'product_detail' product.id %}" class="btn btn-outline-primary btn-sm">View</a>
 
-                {% if product.stock > 0 %}
-                  <form method="POST" action="{% url 'cart_add' product.id %}" class="d-flex gap-2">
-                    {% csrf_token %}
-                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                    <input type="number" name="quantity" value="1" min="1" class="form-control" style="width: 88px;">
-                    <button type="submit" class="btn btn-success btn-sm">Add</button>
-                  </form>
-                {% else %}
-                  <button class="btn btn-secondary btn-sm" disabled>Out of stock</button>
+                {% if request.user.is_authenticated and request.user.role == "customer" %}
+                  {% if product.stock > 0 %}
+                    <form method="POST" action="{% url 'cart_add' product.id %}" class="d-flex gap-2">
+                      {% csrf_token %}
+                      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                      <input type="number" name="quantity" value="1" min="1" class="form-control" style="width: 88px;">
+                      <button type="submit" class="btn btn-success btn-sm">Add</button>
+                    </form>
+                  {% else %}
+                    <button class="btn btn-secondary btn-sm" disabled>Out of stock</button>
+                  {% endif %}
                 {% endif %}
               </div>
             </div>

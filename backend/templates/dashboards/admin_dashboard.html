@@ -2,154 +2,71 @@
 {% block title %}Admin Dashboard | BRFN{% endblock %}
 
 {% block extra_head %}
+<meta http-equiv="refresh" content="20">
 <style>
-  .kpi-card {
-    background: rgba(255,255,255,.07);
-    border: 1px solid rgba(255,255,255,.14);
-    border-radius: 18px;
-    backdrop-filter: blur(14px);
-    box-shadow: 0 20px 60px rgba(0,0,0,.25);
-  }
-  .kpi-label { color: rgba(255,255,255,.70); font-size: .85rem; }
-  .kpi-value { font-size: 1.6rem; font-weight: 800; letter-spacing: .2px; }
-  .chip {
-    display:inline-flex; align-items:center; gap:.5rem;
-    padding:.35rem .7rem;
-    border-radius: 999px;
-    border: 1px solid rgba(255,255,255,.18);
-    background: rgba(0,0,0,.10);
-    color: rgba(255,255,255,.85);
-    font-size: .85rem;
-  }
-  .dot {
-    width:10px; height:10px; border-radius:999px;
-    background: linear-gradient(135deg,#5606ff,#fe8989);
-    box-shadow: 0 0 16px rgba(254,137,137,.25);
-  }
-  .panel {
+  .stat-card {
     background: rgba(255,255,255,.06);
     border: 1px solid rgba(255,255,255,.14);
     border-radius: 18px;
+    padding: 24px;
     backdrop-filter: blur(14px);
+    box-shadow: 0 20px 60px rgba(0,0,0,.35);
   }
-  .panel-title { color: rgba(255,255,255,.92); font-weight: 800; }
-  .panel-sub { color: rgba(255,255,255,.65); }
-  .link-soft { color: rgba(255,255,255,.75); text-decoration: none; }
-  .link-soft:hover { color: #fff; text-decoration: underline; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="row g-3 align-items-stretch">
+<div class="container mt-4">
+  <div class="mb-4">
+    <h2 class="text-white">Admin Dashboard</h2>
+    <p class="text-soft mb-0">
+      Logged in as: <strong>{{ request.user.username }}</strong> | Role: <strong>{{ display_role }}</strong>
+    </p>
+    <p class="text-soft small mb-0">This page refreshes every 20 seconds.</p>
+  </div>
 
-  <!-- Header -->
-  <div class="col-12">
-    <div class="panel p-4 p-md-5 text-white">
-      <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between">
-        <div>
-          <div class="chip mb-2"><span class="dot"></span> Admin Area</div>
-          <h1 class="h3 mb-1 panel-title">Admin Dashboard</h1>
-          <div class="panel-sub">
-            Quick view of the system. Later we can add settlements, commissions, approvals and reports.
-          </div>
-        </div>
-
-        <div class="d-flex flex-wrap gap-2">
-          <a class="btn btn-light btn-round" href="/shop/products/">Open Store</a>
-          <a class="btn btn-outline-light btn-round" href="/accounts/logout/">Logout</a>
-        </div>
-      </div>
-
-      <hr class="border-light opacity-25 my-4">
-
-      <div class="d-flex flex-wrap gap-2">
-        <span class="chip">
-          Signed in as <strong class="ms-1">{{ request.user.username }}</strong>
-        </span>
-        <span class="chip">
-          Role: <strong class="ms-1">{{ request.user.role }}</strong>
-        </span>
+  <div class="row g-4">
+    <div class="col-md-4">
+      <div class="stat-card text-center">
+        <h6 class="text-soft">Total Products</h6>
+        <h2 class="text-white mb-0">{{ total_products }}</h2>
       </div>
     </div>
-  </div>
 
-  <!-- KPIs (static placeholders for now) -->
-  <div class="col-12 col-md-6 col-lg-3">
-    <div class="kpi-card p-4 text-white h-100">
-      <div class="kpi-label mb-1">Products</div>
-      <div class="kpi-value" id="kpiProducts">--</div>
-      <div class="kpi-label">Live catalogue items</div>
-    </div>
-  </div>
-
-  <div class="col-12 col-md-6 col-lg-3">
-    <div class="kpi-card p-4 text-white h-100">
-      <div class="kpi-label mb-1">Orders</div>
-      <div class="kpi-value" id="kpiOrders">--</div>
-      <div class="kpi-label">Placed by customers</div>
-    </div>
-  </div>
-
-  <div class="col-12 col-md-6 col-lg-3">
-    <div class="kpi-card p-4 text-white h-100">
-      <div class="kpi-label mb-1">Producers</div>
-      <div class="kpi-value" id="kpiProducers">--</div>
-      <div class="kpi-label">Active sellers</div>
-    </div>
-  </div>
-
-  <div class="col-12 col-md-6 col-lg-3">
-    <div class="kpi-card p-4 text-white h-100">
-      <div class="kpi-label mb-1">Customers</div>
-      <div class="kpi-value" id="kpiCustomers">--</div>
-      <div class="kpi-label">Registered buyers</div>
-    </div>
-  </div>
-
-  <!-- Actions -->
-  <div class="col-12 col-lg-7">
-    <div class="panel p-4 text-white h-100">
-      <div class="d-flex justify-content-between align-items-start mb-2">
-        <div>
-          <div class="panel-title">Admin actions</div>
-          <div class="panel-sub small">These buttons can later link to real admin tools.</div>
-        </div>
+    <div class="col-md-4">
+      <div class="stat-card text-center">
+        <h6 class="text-soft">Active Products</h6>
+        <h2 class="text-white mb-0">{{ active_products }}</h2>
       </div>
+    </div>
 
-      <div class="row g-2 mt-2">
-        <div class="col-12 col-md-6">
-          <a class="btn btn-outline-light w-100 btn-round" href="/shop/products/">
-            View product catalogue
-          </a>
-        </div>
-        <div class="col-12 col-md-6">
-          <a class="btn btn-outline-light w-100 btn-round" href="/orders/cart/">
-            View cart page (demo)
-          </a>
-        </div>
-        <div class="col-12 col-md-6">
-          <a class="btn btn-outline-light w-100 btn-round" href="/accounts/password_change/">
-            Change my password
-          </a>
-        </div>
-        <div class="col-12 col-md-6">
-          <a class="btn btn-outline-light w-100 btn-round" href="/accounts/logout/">
-            Logout
-          </a>
-        </div>
+    <div class="col-md-4">
+      <div class="stat-card text-center">
+        <h6 class="text-soft">Total Orders</h6>
+        <h2 class="text-white mb-0">{{ total_orders }}</h2>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="stat-card text-center">
+        <h6 class="text-soft">Customers</h6>
+        <h2 class="text-white mb-0">{{ total_customers }}</h2>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="stat-card text-center">
+        <h6 class="text-soft">Producers</h6>
+        <h2 class="text-white mb-0">{{ total_producers }}</h2>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="stat-card text-center">
+        <h6 class="text-soft">Admins</h6>
+        <h2 class="text-white mb-0">{{ total_admins }}</h2>
       </div>
     </div>
   </div>
-
- 
-
-<!-- Tiny JS demo: pull counts from data attributes if you add them later -->
-<script>
-  // For now we show placeholder values so it doesn't look empty.
-  // Later you can replace these with real counts passed from the Django view.
-  document.getElementById("kpiProducts").textContent = "{{ kpi_products|default:'—' }}";
-  document.getElementById("kpiOrders").textContent = "{{ kpi_orders|default:'—' }}";
-  document.getElementById("kpiProducers").textContent = "{{ kpi_producers|default:'—' }}";
-  document.getElementById("kpiCustomers").textContent = "{{ kpi_customers|default:'—' }}";
-</script>
+</div>
 {% endblock %}
