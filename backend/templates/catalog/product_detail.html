@@ -16,7 +16,9 @@
       <div class="text-end">
         <div class="h4 mb-2">£{{ product.price|floatformat:2 }}</div>
         {% if product.is_organic %}
-          <span class="badge text-bg-success">Organic</span>
+          <span class="badge text-bg-success">Certified Organic</span>
+        {% else %}
+          <span class="badge text-bg-secondary">Not Certified Organic</span>
         {% endif %}
       </div>
     </div>
@@ -24,6 +26,11 @@
     {% if product.description %}
       <p>{{ product.description }}</p>
     {% endif %}
+
+    <div class="mb-4">
+      <h5>Availability</h5>
+      <p class="mb-0">{{ product.get_availability_status_display }}</p>
+    </div>
 
     <div class="mb-4">
       <h5>Producer</h5>

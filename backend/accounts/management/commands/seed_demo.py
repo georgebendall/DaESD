@@ -46,7 +46,25 @@ class Command(BaseCommand):
         # DEMO USERS
         # -------------------------
         admin_username = "admin1"
-        customer_usernames = ["customer1", "customer2"]
+        customer_specs = [
+            {
+                "username": "customer1",
+                "email": "customer1@example.com",
+                "first_name": "Ella",
+                "last_name": "Morgan",
+                "phone": "07111 111101",
+                "postcode": "BS3 2AA",
+            },
+            {
+                "username": "customer2",
+                "email": "customer2@example.com",
+                "first_name": "Daniel",
+                "last_name": "Rees",
+                "phone": "07111 111102",
+                "postcode": "BS6 5QA",
+            },
+        ]
+        customer_usernames = [c["username"] for c in customer_specs]
 
         producer_specs = [
             {
@@ -60,25 +78,139 @@ class Command(BaseCommand):
                 "city": "Bristol",
                 "postcode": "BS1 4AB",
                 "products": [
-                    ("Fresh Carrots", "Vegetables", Decimal("1.50"), 20, ["Nuts"]),
-                    ("Seasonal Kale", "Vegetables", Decimal("1.80"), 18, []),
-                    ("Cherry Tomatoes", "Vegetables", Decimal("2.40"), 14, []),
+                    {
+                        "name": "Organic Carrots",
+                        "category": "Vegetables",
+                        "price": Decimal("1.50"),
+                        "stock": Decimal("25"),
+                        "description": "Certified organic carrots grown in rich Bristol Valley soil.",
+                        "is_organic": True,
+                        "availability": Product.AvailabilityStatus.IN_SEASON,
+                        "allergens": [],
+                    },
+                    {
+                        "name": "Cherry Tomatoes",
+                        "category": "Vegetables",
+                        "price": Decimal("2.40"),
+                        "stock": Decimal("18"),
+                        "description": "Sweet greenhouse tomatoes, perfect for salads and sauces.",
+                        "is_organic": False,
+                        "availability": Product.AvailabilityStatus.YEAR_ROUND,
+                        "allergens": [],
+                    },
+                    {
+                        "name": "Organic Heritage Tomatoes",
+                        "category": "Vegetables",
+                        "price": Decimal("2.95"),
+                        "stock": Decimal("14"),
+                        "description": "Certified organic mixed tomatoes with deep seasonal flavour.",
+                        "is_organic": True,
+                        "availability": Product.AvailabilityStatus.IN_SEASON,
+                        "allergens": [],
+                    },
+                    {
+                        "name": "Seasonal Kale",
+                        "category": "Vegetables",
+                        "price": Decimal("1.80"),
+                        "stock": Decimal("18"),
+                        "description": "Leafy kale harvested fresh while in season.",
+                        "is_organic": True,
+                        "availability": Product.AvailabilityStatus.IN_SEASON,
+                        "allergens": [],
+                    },
+                    {
+                        "name": "Bunched Beetroot",
+                        "category": "Vegetables",
+                        "price": Decimal("1.90"),
+                        "stock": Decimal("15"),
+                        "description": "Earthy red beetroot from Bristol Valley Farm.",
+                        "is_organic": False,
+                        "availability": Product.AvailabilityStatus.YEAR_ROUND,
+                        "allergens": [],
+                    },
+                    {
+                        "name": "Organic Spinach",
+                        "category": "Vegetables",
+                        "price": Decimal("2.10"),
+                        "stock": Decimal("16"),
+                        "description": "Certified organic spinach leaves, washed and ready to cook.",
+                        "is_organic": True,
+                        "availability": Product.AvailabilityStatus.YEAR_ROUND,
+                        "allergens": [],
+                    },
+                    {
+                        "name": "Asparagus Spears",
+                        "category": "Vegetables",
+                        "price": Decimal("3.40"),
+                        "stock": Decimal("12"),
+                        "description": "Spring asparagus, currently out of season.",
+                        "is_organic": False,
+                        "availability": Product.AvailabilityStatus.OUT_OF_SEASON,
+                        "allergens": [],
+                    },
                 ],
             },
             {
                 "username": "producer2",
-                "email": "avonorchards@example.com",
+                "email": "hillsidedairy@example.com",
                 "contact_first": "Aisha",
                 "contact_last": "Khan",
-                "business_name": "Avon Orchard Co.",
+                "business_name": "Hillside Dairy",
                 "phone": "07000 100002",
-                "address": "8 Orchard Lane",
-                "city": "Bristol",
-                "postcode": "BS4 2CD",
+                "address": "8 Hillside Lane",
+                "city": "Bath",
+                "postcode": "BA2 7HD",
                 "products": [
-                    ("Apple Juice", "Drinks", Decimal("1.99"), 30, []),
-                    ("Pear Juice", "Drinks", Decimal("2.10"), 22, []),
-                    ("Fresh Apples (Bag)", "Vegetables", Decimal("2.80"), 16, []),
+                    {
+                        "name": "Fresh Milk",
+                        "category": "Dairy & Eggs",
+                        "price": Decimal("1.80"),
+                        "stock": Decimal("30"),
+                        "description": "Fresh whole milk from Hillside Dairy.",
+                        "is_organic": False,
+                        "availability": Product.AvailabilityStatus.YEAR_ROUND,
+                        "allergens": ["Milk"],
+                    },
+                    {
+                        "name": "Organic Whole Milk",
+                        "category": "Dairy & Eggs",
+                        "price": Decimal("2.30"),
+                        "stock": Decimal("20"),
+                        "description": "Certified organic whole milk from pasture-fed cows.",
+                        "is_organic": True,
+                        "availability": Product.AvailabilityStatus.YEAR_ROUND,
+                        "allergens": ["Milk"],
+                    },
+                    {
+                        "name": "Free Range Eggs",
+                        "category": "Dairy & Eggs",
+                        "price": Decimal("2.90"),
+                        "stock": Decimal("36"),
+                        "description": "Free range eggs from local hens.",
+                        "is_organic": False,
+                        "availability": Product.AvailabilityStatus.IN_SEASON,
+                        "allergens": ["Eggs"],
+                    },
+                    {
+                        "name": "Greek Yogurt",
+                        "category": "Dairy & Eggs",
+                        "price": Decimal("1.60"),
+                        "stock": Decimal("18"),
+                        "description": "Thick cultured yogurt made with local milk.",
+                        "is_organic": False,
+                        "availability": Product.AvailabilityStatus.YEAR_ROUND,
+                        "allergens": ["Milk"],
+                    },
+                    {
+                        "name": "Mature Cheddar",
+                        "category": "Dairy & Eggs",
+                        "price": Decimal("3.80"),
+                        "stock": Decimal("9"),
+                        "description": "Aged farmhouse cheddar with a rich dairy flavour.",
+                        "is_organic": False,
+                        "availability": Product.AvailabilityStatus.UNAVAILABLE,
+                        "allergens": ["Milk"],
+                    },
                 ],
             },
             {
@@ -92,25 +224,79 @@ class Command(BaseCommand):
                 "city": "Bristol",
                 "postcode": "BS8 1EF",
                 "products": [
-                    ("Sourdough Bread", "Bakery", Decimal("3.20"), 12, ["Gluten"]),
-                    ("Croissants (2 pack)", "Bakery", Decimal("2.90"), 10, ["Gluten", "Milk"]),
-                    ("Brownies", "Bakery", Decimal("3.50"), 8, ["Gluten", "Eggs"]),
+                    {
+                        "name": "Sourdough Bread",
+                        "category": "Bakery",
+                        "price": Decimal("3.20"),
+                        "stock": Decimal("12"),
+                        "description": "Slow-fermented sourdough loaf baked fresh each morning.",
+                        "is_organic": False,
+                        "availability": Product.AvailabilityStatus.YEAR_ROUND,
+                        "allergens": ["Gluten"],
+                    },
+                    {
+                        "name": "Organic Seeded Loaf",
+                        "category": "Bakery",
+                        "price": Decimal("3.60"),
+                        "stock": Decimal("10"),
+                        "description": "Certified organic seeded bread containing gluten.",
+                        "is_organic": True,
+                        "availability": Product.AvailabilityStatus.YEAR_ROUND,
+                        "allergens": ["Gluten"],
+                    },
+                    {
+                        "name": "Hazelnut Brownies",
+                        "category": "Bakery",
+                        "price": Decimal("3.50"),
+                        "stock": Decimal("8"),
+                        "description": "Chocolate brownies with roasted nuts and free range eggs.",
+                        "is_organic": False,
+                        "availability": Product.AvailabilityStatus.IN_SEASON,
+                        "allergens": ["Gluten", "Eggs", "Nuts"],
+                    },
                 ],
             },
             {
                 "username": "producer4",
-                "email": "harboursidedairy@example.com",
+                "email": "avonorchards@example.com",
                 "contact_first": "Maya",
                 "contact_last": "Evans",
-                "business_name": "Harbour Side Dairy",
+                "business_name": "Avon Orchard Co.",
                 "phone": "07000 100004",
-                "address": "5 Dockside Way",
+                "address": "5 Orchard Way",
                 "city": "Bristol",
                 "postcode": "BS1 6GH",
                 "products": [
-                    ("Organic Milk", "Dairy", Decimal("2.30"), 20, ["Milk"]),
-                    ("Greek Yogurt", "Dairy", Decimal("1.60"), 18, ["Milk"]),
-                    ("Mature Cheddar", "Dairy", Decimal("3.80"), 9, ["Milk"]),
+                    {
+                        "name": "Organic Apple Juice",
+                        "category": "Drinks",
+                        "price": Decimal("1.99"),
+                        "stock": Decimal("30"),
+                        "description": "Certified organic apple juice pressed in Bristol.",
+                        "is_organic": True,
+                        "availability": Product.AvailabilityStatus.YEAR_ROUND,
+                        "allergens": [],
+                    },
+                    {
+                        "name": "Pear Juice",
+                        "category": "Drinks",
+                        "price": Decimal("2.10"),
+                        "stock": Decimal("22"),
+                        "description": "Clear pear juice from Avon orchards.",
+                        "is_organic": False,
+                        "availability": Product.AvailabilityStatus.YEAR_ROUND,
+                        "allergens": [],
+                    },
+                    {
+                        "name": "Nutty Granola",
+                        "category": "Bakery",
+                        "price": Decimal("2.60"),
+                        "stock": Decimal("12"),
+                        "description": "Crunchy oat granola with mixed nuts.",
+                        "is_organic": False,
+                        "availability": Product.AvailabilityStatus.IN_SEASON,
+                        "allergens": ["Nuts", "Gluten"],
+                    },
                 ],
             },
             {
@@ -124,9 +310,36 @@ class Command(BaseCommand):
                 "city": "Bristol",
                 "postcode": "BS16 1QY",
                 "products": [
-                    ("Chicken Thighs", "Meat", Decimal("4.50"), 10, []),
-                    ("Beef Mince", "Meat", Decimal("5.20"), 12, []),
-                    ("Pork Sausages", "Meat", Decimal("4.10"), 14, []),
+                    {
+                        "name": "Chicken Thighs",
+                        "category": "Meat",
+                        "price": Decimal("4.50"),
+                        "stock": Decimal("10"),
+                        "description": "Free range chicken thighs from Mendip Pasture Meats.",
+                        "is_organic": False,
+                        "availability": Product.AvailabilityStatus.YEAR_ROUND,
+                        "allergens": [],
+                    },
+                    {
+                        "name": "Beef Mince",
+                        "category": "Meat",
+                        "price": Decimal("5.20"),
+                        "stock": Decimal("12"),
+                        "description": "Lean beef mince, packed fresh for local restaurants.",
+                        "is_organic": False,
+                        "availability": Product.AvailabilityStatus.YEAR_ROUND,
+                        "allergens": [],
+                    },
+                    {
+                        "name": "Pork Sausages",
+                        "category": "Meat",
+                        "price": Decimal("4.10"),
+                        "stock": Decimal("14"),
+                        "description": "Traditional pork sausages.",
+                        "is_organic": False,
+                        "availability": Product.AvailabilityStatus.IN_SEASON,
+                        "allergens": ["Gluten"],
+                    },
                 ],
             },
         ]
@@ -135,7 +348,7 @@ class Command(BaseCommand):
         demo_usernames = producer_usernames + customer_usernames + [admin_username]
 
         # -------------------------
-        # RESET (safe for MongoDB)
+        # RESET (safe for rerunning against PostgreSQL)
         # -------------------------
         if reset:
             self.stdout.write("Reset requested. Deleting old demo data...")
@@ -227,14 +440,16 @@ class Command(BaseCommand):
         # 3) CUSTOMERS + PROFILES (FORCE PASSWORD)
         # -------------------------
         customers: list[User] = []
-        for i, uname in enumerate(customer_usernames, start=1):
+        for spec in customer_specs:
             u, _ = User.objects.get_or_create(
-                username=uname,
-                defaults={"email": f"{uname}@example.com"},
+                username=spec["username"],
+                defaults={"email": spec["email"]},
             )
 
-            u.email = f"{uname}@example.com"
+            u.email = spec["email"]
             u.role = User.Role.CUSTOMER
+            u.first_name = spec["first_name"]
+            u.last_name = spec["last_name"]
             u.is_active = True
             u.set_password(self.CUSTOMER_PASSWORD)  # IMPORTANT: force known password
             u.save()
@@ -242,8 +457,8 @@ class Command(BaseCommand):
             CustomerProfile.objects.update_or_create(
                 user=u,
                 defaults={
-                    "phone": f"07111 1111{i}",
-                    "postcode": "BS16 1QY",
+                    "phone": spec["phone"],
+                    "postcode": spec["postcode"],
                 },
             )
             customers.append(u)
@@ -251,7 +466,7 @@ class Command(BaseCommand):
         # -------------------------
         # 4) CATALOG (CATEGORIES + ALLERGENS)
         # -------------------------
-        category_names = ["Vegetables", "Dairy", "Bakery", "Meat", "Drinks"]
+        category_names = ["Vegetables", "Dairy & Eggs", "Bakery", "Meat", "Drinks"]
         categories: dict[str, Category] = {}
         for name in category_names:
             c, _ = Category.objects.get_or_create(name=name, defaults={"slug": slugify(name)})
@@ -268,29 +483,35 @@ class Command(BaseCommand):
         # -------------------------
         for p_user in producers:
             product_list = producer_product_map.get(p_user.username, [])
-            for name, cat_name, price, stock, allergen_list in product_list:
+            for item in product_list:
+                slug = slugify(item["name"])
                 prod, _ = Product.objects.get_or_create(
                     producer=p_user,
-                    slug=slugify(name),
+                    slug=slug,
                     defaults={
-                        "category": categories[cat_name],
-                        "name": name,
-                        "description": f"Demo product: {name}",
-                        "price": price,
-                        "stock": stock,
-                        "is_active": True,
+                        "category": categories[item["category"]],
+                        "name": item["name"],
+                        "description": item["description"],
+                        "price": item["price"],
+                        "stock": item["stock"],
+                        "unit": item.get("unit", Product.Unit.EACH),
+                        "is_organic": item["is_organic"],
+                        "availability_status": item["availability"],
                     },
                 )
 
-                prod.category = categories[cat_name]
-                prod.name = name
-                prod.price = price
-                prod.stock = stock
-                prod.is_active = True
+                prod.category = categories[item["category"]]
+                prod.name = item["name"]
+                prod.description = item["description"]
+                prod.price = item["price"]
+                prod.stock = item["stock"]
+                prod.unit = item.get("unit", Product.Unit.EACH)
+                prod.is_organic = item["is_organic"]
+                prod.availability_status = item["availability"]
                 prod.save()
 
                 prod.allergens.clear()
-                for aname in allergen_list:
+                for aname in item["allergens"]:
                     if aname in allergens:
                         prod.allergens.add(allergens[aname])
 
@@ -299,8 +520,18 @@ class Command(BaseCommand):
         # -------------------------
         commission_rate = Decimal("0.10")
 
-        p1_products = Product.objects.filter(producer=producers[0]).order_by("created_at")
-        p2_products = Product.objects.filter(producer=producers[1]).order_by("created_at")
+        demo_order_ids = list(
+            PaymentTransaction.objects.filter(provider_reference__startswith="demo-")
+            .values_list("order_id", flat=True)
+        )
+        if demo_order_ids:
+            PaymentTransaction.objects.filter(order_id__in=demo_order_ids).delete()
+            ProducerOrder.objects.filter(parent_order_id__in=demo_order_ids).delete()
+            OrderItem.objects.filter(order_id__in=demo_order_ids).delete()
+            Order.objects.filter(id__in=demo_order_ids).delete()
+
+        p1_products = Product.objects.filter(producer=producers[0], is_active=True).order_by("created_at")
+        p2_products = Product.objects.filter(producer=producers[1], is_active=True).order_by("created_at")
 
         o1 = Order.objects.create(customer=customers[0], status=Order.Status.PAID)
         OrderItem.objects.create(order=o1, product=p1_products.first(), quantity=2, unit_price=p1_products.first().price)
