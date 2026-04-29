@@ -39,6 +39,10 @@ def product_list_page(request):
     paginator = Paginator(qs, 12)
     page_obj = paginator.get_page(request.GET.get("page") or 1)
 
+    if request.user.is_authenticated and getattr(request.user, "role", "") == "customer":
+        for product in page_obj.object_list:
+            product.food_miles = product.food_miles_for_customer(request.user)
+
     categories = Category.objects.order_by("name")
     allergens = Allergen.objects.order_by("name")
 
@@ -67,10 +71,15 @@ def product_detail_page(request, product_id):
         is_active=True,
     )
 
+    food_miles = None
+    if request.user.is_authenticated and getattr(request.user, "role", "") == "customer":
+        food_miles = product.food_miles_for_customer(request.user)
+
     return render(
         request,
         "catalog/product_detail.html",
         {
             "product": product,
+            "food_miles": food_miles,
         },
     )

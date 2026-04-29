@@ -11,7 +11,7 @@
     <a href="{{ continue_url }}" class="btn btn-outline-light btn-round">Continue Shopping</a>
   </div>
 
-  {% if cart.items.all %}
+  {% if cart_items %}
     <div class="table-responsive mb-4">
       <table class="table table-dark align-middle">
         <thead>
@@ -19,12 +19,14 @@
             <th>Product</th>
             <th>Price</th>
             <th style="width: 180px;">Quantity</th>
+            <th>Food Miles</th>
             <th>Line Total</th>
             <th class="text-end">Actions</th>
           </tr>
         </thead>
+
         <tbody>
-          {% for item in cart.items.all %}
+          {% for item in cart_items %}
             <tr>
               <td>
                 <strong>{{ item.product.name }}</strong>
@@ -33,7 +35,7 @@
                 </div>
               </td>
 
-              <td class="text-white">£{{ item.unit_price|floatformat:2 }}</td>
+              <td class="text-white">£{{ item.product.price|floatformat:2 }}</td>
 
               <td>
                 <form method="post" action="{% url 'cart_update' item.id %}" class="d-flex gap-2">
@@ -47,6 +49,14 @@
                   >
                   <button type="submit" class="btn btn-outline-light btn-sm">Update</button>
                 </form>
+              </td>
+
+              <td>
+                {% if item.food_miles is not None %}
+                  <span class="badge text-bg-info">{{ item.food_miles }} miles</span>
+                {% else %}
+                  <span class="text-soft">Unavailable</span>
+                {% endif %}
               </td>
 
               <td class="text-white fw-semibold">£{{ item.line_total|floatformat:2 }}</td>
@@ -67,6 +77,11 @@
       <div>
         <div class="text-soft">Subtotal</div>
         <div class="h3 text-danger mb-0">£{{ cart.subtotal|floatformat:2 }}</div>
+
+        {% if has_food_miles %}
+          <div class="text-soft mt-3">Total food miles</div>
+          <div class="h5 text-white mb-0">{{ total_food_miles }} miles</div>
+        {% endif %}
       </div>
 
       <form method="post" action="{% url 'checkout_now' %}">

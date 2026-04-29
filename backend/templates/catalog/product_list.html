@@ -52,6 +52,21 @@
   </div>
 </form>
 
+<div class="mb-4">
+  <h5>Browse by category</h5>
+  <div class="d-flex flex-wrap gap-2">
+    <a href="{% url 'product_list' %}" class="btn btn-sm {% if not category_slug %}btn-primary{% else %}btn-outline-primary{% endif %}">
+      All
+    </a>
+
+    {% for c in categories %}
+      <a href="?category={{ c.slug }}" class="btn btn-sm {% if c.slug == category_slug %}btn-primary{% else %}btn-outline-primary{% endif %}">
+        {{ c.name }}
+      </a>
+    {% endfor %}
+  </div>
+</div>
+
 <div class="row g-3">
   {% for product in page_obj.object_list %}
     <div class="col-12 col-md-6 col-lg-4">
@@ -66,6 +81,11 @@
 
           <div class="text-muted small mb-2">
             Category: {{ product.category.name }}
+          </div>
+
+          <div class="small mb-2">
+            <strong>Availability:</strong>
+            <span class="badge text-bg-success">{{ product.get_availability_status_display }}</span>
           </div>
 
           <div class="small mb-2">
@@ -85,6 +105,14 @@
               Not provided
             {% endif %}
           </div>
+
+          {% if product.food_miles is not None %}
+            <div class="small mb-2">
+              <span class="badge text-bg-info">
+                {{ product.food_miles }} food miles
+              </span>
+            </div>
+          {% endif %}
 
           {% if product.is_organic %}
             <div class="mb-2">

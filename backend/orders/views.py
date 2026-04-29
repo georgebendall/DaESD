@@ -7,7 +7,7 @@ from django.views.decorators.http import require_POST
 
 from accounts.models import User
 from payments.models import PaymentTransaction
-from .models import Order
+from .models import Order, Cart
 
 try:
     from bson import ObjectId
@@ -81,8 +81,35 @@ def cart_page(request):
     cart, _ = Cart.objects.get_or_create(customer=request.user)
     continue_url = request.session.get("last_product_list_url", "/shop/products/")
 
-    return render(request, "orders/cart.html", {"cart": cart, "continue_url": continue_url})
+    cart_items = list(
+        cart.items.select_related(
+            "product",
+            "product__producer",
+            "product__category",
+        )
+    )
 
+    total_food_miles = 0
+    has_food_miles = False
+
+    for item in cart_items:
+        item.food_miles = item.product.food_miles_for_customer(request.user)
+
+        if item.food_miles is not None:
+            total_food_miles += item.food_miles
+            has_food_miles = True
+
+    return render(
+        request,
+        "orders/cart.html",
+        {
+            "cart": cart,
+            "cart_items": cart_items,
+            "continue_url": continue_url,
+            "total_food_miles": round(total_food_miles, 1),
+            "has_food_miles": has_food_miles,
+        },
+    )
 
 @login_required
 @require_POST

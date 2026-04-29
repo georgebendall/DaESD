@@ -1,3 +1,5 @@
+from math import asin, cos, radians, sin, sqrt
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
@@ -151,6 +153,15 @@ class Product(models.Model):
         }
         self.is_active = self.stock > 0 and self.availability_status in visible_statuses
 
+    def food_miles_for_customer(self, customer):
+        try:
+            customer_postcode = customer.customer_profile.postcode
+            producer_postcode = self.producer.producer_profile.postcode
+        except Exception:
+            return None
+
+        return calculate_food_miles(customer_postcode, producer_postcode)
+
     def save(self, *args, **kwargs):
         if not self.slug and self.name:
             self.slug = slugify(self.name)
@@ -189,3 +200,55 @@ class ProductInventoryHistory(models.Model):
 
     def __str__(self) -> str:
         return f"Inventory change for {self.product.name} at {self.created_at:%Y-%m-%d %H:%M}"
+
+
+POSTCODE_COORDS = {
+    "BS1": (51.4545, -2.5879),
+    "BS1 5JG": (51.4546, -2.6010),
+    "BS1 4DJ": (51.4528, -2.5900),
+    "BS2": (51.4590, -2.5800),
+    "BS3": (51.4400, -2.6100),
+    "BS4": (51.4300, -2.5600),
+    "BS8": (51.4580, -2.6200),
+    "BS40": (51.3500, -2.7000),
+    "GL14 2QA": (51.7900, -2.5400),
+    "L4 4EL": (53.4550, -2.9600),
+}
+
+
+def normalise_postcode(postcode):
+    return (postcode or "").strip().upper()
+
+
+def postcode_location(postcode):
+    postcode = normalise_postcode(postcode)
+
+    if postcode in POSTCODE_COORDS:
+        return POSTCODE_COORDS[postcode]
+
+    outward_code = postcode.split()[0] if postcode else ""
+    return POSTCODE_COORDS.get(outward_code)
+
+
+def calculate_food_miles(customer_postcode, producer_postcode):
+    start = postcode_location(customer_postcode)
+    end = postcode_location(producer_postcode)
+
+    if not start or not end:
+        return None
+
+    lat1, lon1 = start
+    lat2, lon2 = end
+
+    radius_miles = 3958.8
+
+    dlat = radians(lat2 - lat1)
+    dlon = radians(lon2 - lon1)
+
+    a = (
+        sin(dlat / 2) ** 2
+        + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2) ** 2
+    )
+
+    distance = 2 * radius_miles * asin(sqrt(a))
+    return round(distance, 1)
