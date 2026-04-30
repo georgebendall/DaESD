@@ -26,7 +26,7 @@
 {% block content %}
 <div class="row g-3">
 
-  <!-- Header -->
+  
   <div class="col-12">
     <div class="panel p-4 p-md-5 text-white">
       <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between">
@@ -34,17 +34,24 @@
           <h1 class="h3 mb-1 panel-title">Welcome back, {{ request.user.username }}</h1>
           <div class="panel-sub">Browse the store, manage your cart, and view your orders.</div>
         </div>
-
         <div class="d-flex flex-wrap gap-2">
           <a class="btn btn-light btn-round" href="/shop/products/">Shop</a>
           <a class="btn btn-outline-light btn-round" href="/orders/cart/">Cart</a>
-          <a class="btn btn-outline-light btn-round" href="/accounts/logout/">Logout</a>
+        
+          
+          <a class="btn btn-outline-light btn-round" href="{% url 'order_history' %}">Order History</a>
+        
+          
+          <form method="post" action="{% url 'logout' %}" class="d-inline">
+            {% csrf_token %}
+            <button class="btn btn-outline-light btn-round" type="submit">Logout</button>
+          </form>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- KPIs -->
+  
   <div class="col-12 col-md-4">
     <div class="kpi-card p-4 text-white h-100">
       <div class="kpi-label mb-1">Products available</div>
@@ -69,7 +76,7 @@
     </div>
   </div>
 
-  <!-- Recent orders -->
+  
   <div class="col-12">
     <div class="panel p-4 text-white">
       <div class="d-flex justify-content-between align-items-center">

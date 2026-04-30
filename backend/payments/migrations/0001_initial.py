@@ -2,7 +2,6 @@
 
 import django.core.validators
 import django.db.models.deletion
-import django_mongodb_backend.fields
 from decimal import Decimal
 from django.conf import settings
 from django.db import migrations, models
@@ -21,7 +20,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='PaymentTransaction',
             fields=[
-                ('id', django_mongodb_backend.fields.ObjectIdAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('status', models.CharField(choices=[('pending', 'Pending'), ('succeeded', 'Succeeded'), ('failed', 'Failed'), ('refunded', 'Refunded')], db_index=True, default='pending', max_length=20)),
                 ('provider', models.CharField(default='manual', help_text='Payment provider name, e.g. stripe, paypal, manual.', max_length=40)),
                 ('amount', models.DecimalField(decimal_places=2, help_text='Total amount charged (snapshot).', max_digits=10, validators=[django.core.validators.MinValueValidator(0)])),
@@ -35,7 +34,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='WeeklySettlement',
             fields=[
-                ('id', django_mongodb_backend.fields.ObjectIdAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('period_start', models.DateField()),
                 ('period_end', models.DateField()),
                 ('gross_sales', models.DecimalField(decimal_places=2, default=Decimal('0.00'), max_digits=12)),

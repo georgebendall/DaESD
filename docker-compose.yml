@@ -9,18 +9,24 @@ services:
     ports:
       - "8000:8000"
     environment:
-      MONGODB_URI: mongodb://mongodb:27017
-      MONGODB_DB: brfn_db
+      POSTGRES_DB: brfn_db
+      POSTGRES_USER: brfn_user
+      POSTGRES_PASSWORD: brfn_password
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
     depends_on:
-      - mongodb
+      - db
 
-  mongodb:
-    image: mongo:7.0
-    container_name: brfn_mongodb
+  db:
+    image: postgres:16
     ports:
-      - "27017:27017"
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: brfn_db
+      POSTGRES_USER: brfn_user
+      POSTGRES_PASSWORD: brfn_password
     volumes:
-      - mongo_data:/data/db
+      - postgres_data:/var/lib/postgresql/data
 
 volumes:
-  mongo_data:
+  postgres_data:

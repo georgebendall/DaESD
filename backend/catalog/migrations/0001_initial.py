@@ -2,7 +2,6 @@
 
 import django.core.validators
 import django.db.models.deletion
-import django_mongodb_backend.fields
 from django.conf import settings
 from django.db import migrations, models
 
@@ -19,14 +18,14 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Allergen',
             fields=[
-                ('id', django_mongodb_backend.fields.ObjectIdAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.CharField(max_length=80, unique=True)),
             ],
         ),
         migrations.CreateModel(
             name='Category',
             fields=[
-                ('id', django_mongodb_backend.fields.ObjectIdAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.CharField(max_length=100, unique=True)),
                 ('slug', models.SlugField(max_length=120, unique=True)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
@@ -35,7 +34,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Product',
             fields=[
-                ('id', django_mongodb_backend.fields.ObjectIdAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.CharField(max_length=140)),
                 ('slug', models.SlugField(max_length=160)),
                 ('description', models.TextField(blank=True)),

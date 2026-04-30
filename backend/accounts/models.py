@@ -1,6 +1,12 @@
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, UserManager
 from django.core.exceptions import ValidationError
 from django.db import models
+
+
+class RoleAwareUserManager(UserManager):
+    def create_superuser(self, username, email=None, password=None, **extra_fields):
+        extra_fields.setdefault("role", User.Role.ADMIN)
+        return super().create_superuser(username, email, password, **extra_fields)
 
 
 class User(AbstractUser):
@@ -23,6 +29,20 @@ class User(AbstractUser):
     )
 
     email = models.EmailField(unique=True)
+
+    objects = RoleAwareUserManager()
+
+    @property
+    def is_admin_user(self) -> bool:
+        return self.is_superuser or self.is_staff or self.role == self.Role.ADMIN
+
+    @property
+    def is_producer_user(self) -> bool:
+        return self.role == self.Role.PRODUCER and not self.is_admin_user
+
+    @property
+    def is_customer_user(self) -> bool:
+        return self.role == self.Role.CUSTOMER and not self.is_admin_user
 
     def __str__(self) -> str:
         return f"{self.username} ({self.role})"

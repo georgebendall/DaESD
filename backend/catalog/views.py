@@ -13,9 +13,15 @@ def product_list_page(request):
     q = (request.GET.get("q") or "").strip()
     category_slug = (request.GET.get("category") or "").strip()
     allergen_id = (request.GET.get("allergen") or "").strip()
+    exclude_allergen_id = (request.GET.get("exclude_allergen") or "").strip()
+    availability = (request.GET.get("availability") or "").strip()
     organic_only = (request.GET.get("organic") or "").strip()
 
-    qs = Product.objects.filter(is_active=True).select_related("category", "producer")
+    qs = (
+        Product.objects.filter(is_active=True)
+        .select_related("category", "producer")
+        .prefetch_related("allergens")
+    )
 
     if category_slug:
         qs = qs.filter(category__slug=category_slug)
@@ -26,10 +32,18 @@ def product_list_page(request):
             | Q(description__icontains=q)
             | Q(producer__username__icontains=q)
             | Q(producer__producer_profile__business_name__icontains=q)
+            | Q(allergens__name__icontains=q)
         )
 
-    if allergen_id:
+    if allergen_id.isdigit():
         qs = qs.filter(allergens__id=allergen_id)
+
+    if exclude_allergen_id.isdigit():
+        qs = qs.exclude(allergens__id=exclude_allergen_id)
+
+    valid_availability_values = {value for value, _ in Product.AvailabilityStatus.choices}
+    if availability in valid_availability_values:
+        qs = qs.filter(availability_status=availability)
 
     if organic_only == "1":
         qs = qs.filter(is_organic=True)
@@ -59,6 +73,9 @@ def product_list_page(request):
             "categories": categories,
             "allergens": allergens,
             "selected_allergen": allergen_id,
+            "excluded_allergen": exclude_allergen_id,
+            "availability": availability,
+            "availability_choices": Product.AvailabilityStatus.choices,
             "organic_only": organic_only,
         },
     )

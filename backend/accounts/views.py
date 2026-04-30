@@ -10,15 +10,14 @@ from .models import CustomerProfile, ProducerProfile, User
 @login_required
 def after_login(request):
     user = request.user
-    role = getattr(user, "role", "")
 
-    if user.is_staff or role == User.Role.ADMIN:
+    if user.is_admin_user:
         return redirect("admin_dashboard")
 
-    if role == User.Role.PRODUCER:
+    if user.is_producer_user:
         return redirect("producer_dashboard")
 
-    if role == User.Role.CUSTOMER:
+    if user.is_customer_user:
         return redirect("customer_dashboard")
 
     return redirect("home")
@@ -40,6 +39,8 @@ def register_customer(request):
             user = form.save(commit=False)
             user.email = form.cleaned_data["email"]
             user.role = User.Role.CUSTOMER
+            user.is_staff = False
+            user.is_superuser = False
             user.save()
 
             CustomerProfile.objects.create(
@@ -67,6 +68,8 @@ def register_producer(request):
             user = form.save(commit=False)
             user.email = form.cleaned_data["email"]
             user.role = User.Role.PRODUCER
+            user.is_staff = False
+            user.is_superuser = False
             user.save()
 
             ProducerProfile.objects.create(
