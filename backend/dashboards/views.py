@@ -1,58 +1,92 @@
+# backend/dashboards/views.py
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import F, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from accounts.models import User
 from catalog.models import Product, ProductInventoryHistory
-from orders.models import Order
+from orders.models import Order, ProducerOrder
 from .forms import ProducerProductForm
 
 
 @login_required
 def admin_dashboard(request):
-    if not request.user.is_admin_user:
+    
+    if not request.user.is_staff and getattr(request.user, "role", "") != User.Role.ADMIN:
         return render(request, "dashboards/forbidden.html", status=403)
 
     total_products = Product.objects.count()
     active_products = Product.objects.filter(is_active=True).count()
     total_orders = Order.objects.count()
-    total_customers = User.objects.filter(role=User.Role.CUSTOMER).count()
-    total_producers = User.objects.filter(role=User.Role.PRODUCER).count()
-    total_admins = User.objects.filter(
-        Q(role=User.Role.ADMIN) | Q(is_staff=True) | Q(is_superuser=True)
-    ).distinct().count()
+
+    customers_count = User.objects.filter(role=User.Role.CUSTOMER).count()
+    producers_count = User.objects.filter(role=User.Role.PRODUCER).count()
+    admins_count = User.objects.filter(role=User.Role.ADMIN).count()
+
+    
+    producer_list = list(
+        User.objects.filter(role=User.Role.PRODUCER).order_by("username")
+    )
+
+    
+    for p in producer_list:
+        p.postcode_display = (
+            getattr(p, "postcode", None)
+            or getattr(p, "post_code", None)
+            or getattr(p, "zip_code", None)
+            or ""
+        )
+
+    
+    recent_orders = list(
+        Order.objects.select_related("customer")
+        .prefetch_related("items__product__producer", "items__product")
+        .order_by("-created_at")[:10]
+    )
+    for o in recent_orders:
+        o.producer_names = ", ".join(
+            sorted({it.product.producer.username for it in o.items.all() if it.product_id})
+        )
+
+    
+    recent_producer_orders = (
+        ProducerOrder.objects.select_related("producer", "parent_order")
+        .order_by("-created_at")[:15]
+    )
 
     context = {
-        "display_role": "Admin",
         "total_products": total_products,
         "active_products": active_products,
         "total_orders": total_orders,
-        "total_customers": total_customers,
-        "total_producers": total_producers,
-        "total_admins": total_admins,
+        "customers_count": customers_count,
+        "producers_count": producers_count,
+        "admins_count": admins_count,
+        "producer_list": producer_list,
+        "recent_orders": recent_orders,
+        "recent_producer_orders": recent_producer_orders,
     }
     return render(request, "dashboards/admin_dashboard.html", context)
 
-
 @login_required
 def customer_dashboard(request):
-    if not request.user.is_customer_user:
+    
+    if getattr(request.user, "role", "") != User.Role.CUSTOMER:
         return redirect("after_login")
 
-    user = request.user
     products_count = Product.objects.filter(is_active=True).count()
-    my_orders_qs = Order.objects.filter(customer=user).order_by("-created_at")
+
+    my_orders_qs = Order.objects.filter(customer=request.user).order_by("-created_at")
     my_orders_count = my_orders_qs.count()
     recent_orders = my_orders_qs[:5]
 
+    
     cart_items = 0
     try:
-        from orders.models import Cart
-        cart = Cart.objects.filter(customer=user).first()
-        if cart:
-            cart_items = cart.items.count()
+        from orders.models import Cart, CartItem
+        cart = Cart.objects.filter(customer=request.user).first()
+        cart_items = CartItem.objects.filter(cart=cart).count() if cart else 0
     except Exception:
         cart_items = 0
 
@@ -64,11 +98,10 @@ def customer_dashboard(request):
     }
     return render(request, "dashboards/customer_dashboard.html", context)
 
-
 def _producer_only_or_redirect(request):
     if not request.user.is_authenticated:
         return redirect("login")
-    if not request.user.is_producer_user:
+    if getattr(request.user, "role", "") != User.Role.PRODUCER:
         return redirect("after_login")
     return None
 
@@ -85,13 +118,13 @@ def producer_dashboard(request):
         .order_by("-updated_at")
     )
 
-    low_stock_qs = products_qs.filter(stock__lte=F("stock_warning_level"))
+    low_stock_products = [p for p in products_qs if p.is_low_stock]
 
     context = {
         "products_count": products_qs.count(),
         "active_products_count": products_qs.filter(is_active=True).count(),
-        "low_stock_count": low_stock_qs.count(),
-        "low_stock_products": low_stock_qs[:5],
+        "low_stock_count": len(low_stock_products),
+        "low_stock_products": low_stock_products[:5],
         "recent_products": products_qs[:5],
     }
     return render(request, "dashboards/producer_dashboard.html", context)
@@ -108,16 +141,7 @@ def producer_stock(request):
         .select_related("category")
         .order_by("name")
     )
-
-    return render(
-        request,
-        "dashboards/stock.html",
-        {
-            "products": products,
-            "products_count": products.count(),
-            "low_stock_count": products.filter(stock__lte=F("stock_warning_level")).count(),
-        },
-    )
+    return render(request, "dashboards/stock.html", {"products": products})
 
 
 @login_required
@@ -133,6 +157,8 @@ def add_product(request):
 
     if request.method == "POST":
         form = ProducerProductForm(request.POST, user=request.user)
+
+        # keep producer safe
         form.instance.producer = request.user
 
         if form.is_valid():
@@ -181,7 +207,10 @@ def edit_product(request, product_id):
         if form.is_valid():
             updated_product = form.save()
 
-            if old_stock != updated_product.stock or old_availability != updated_product.availability_status:
+            if (
+                old_stock != updated_product.stock
+                or old_availability != updated_product.availability_status
+            ):
                 ProductInventoryHistory.objects.create(
                     product=updated_product,
                     changed_by=request.user,
@@ -233,8 +262,4 @@ def delete_product(request, product_id):
 
 @login_required
 def add_stock(request, product_id):
-    redirect_response = _producer_only_or_redirect(request)
-    if redirect_response:
-        return redirect_response
-
     return redirect("edit_product", product_id=product_id)

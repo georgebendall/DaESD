@@ -1,72 +1,161 @@
 {% extends "base.html" %}
 {% block title %}Admin Dashboard | BRFN{% endblock %}
 
-{% block extra_head %}
-<meta http-equiv="refresh" content="20">
-<style>
-  .stat-card {
-    background: rgba(255,255,255,.06);
-    border: 1px solid rgba(255,255,255,.14);
-    border-radius: 18px;
-    padding: 24px;
-    backdrop-filter: blur(14px);
-    box-shadow: 0 20px 60px rgba(0,0,0,.35);
-  }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="container mt-4">
-  <div class="mb-4">
-    <h2 class="text-white">Admin Dashboard</h2>
-    <p class="text-soft mb-0">
-      Logged in as: <strong>{{ request.user.username }}</strong> | Role: <strong>{{ display_role }}</strong>
-    </p>
-    <p class="text-soft small mb-0">This page refreshes every 20 seconds.</p>
-  </div>
+<div class="glass p-4 mt-4">
 
-  <div class="row g-4">
-    <div class="col-md-4">
-      <div class="stat-card text-center">
-        <h6 class="text-soft">Total Products</h6>
-        <h2 class="text-white mb-0">{{ total_products }}</h2>
-      </div>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h2 class="text-white mb-1">Admin Dashboard</h2>
+      <p class="text-soft mb-0">System overview (products, users, orders, and producer sub-orders).</p>
     </div>
-
-    <div class="col-md-4">
-      <div class="stat-card text-center">
-        <h6 class="text-soft">Active Products</h6>
-        <h2 class="text-white mb-0">{{ active_products }}</h2>
-      </div>
-    </div>
-
-    <div class="col-md-4">
-      <div class="stat-card text-center">
-        <h6 class="text-soft">Total Orders</h6>
-        <h2 class="text-white mb-0">{{ total_orders }}</h2>
-      </div>
-    </div>
-
-    <div class="col-md-4">
-      <div class="stat-card text-center">
-        <h6 class="text-soft">Customers</h6>
-        <h2 class="text-white mb-0">{{ total_customers }}</h2>
-      </div>
-    </div>
-
-    <div class="col-md-4">
-      <div class="stat-card text-center">
-        <h6 class="text-soft">Producers</h6>
-        <h2 class="text-white mb-0">{{ total_producers }}</h2>
-      </div>
-    </div>
-
-    <div class="col-md-4">
-      <div class="stat-card text-center">
-        <h6 class="text-soft">Admins</h6>
-        <h2 class="text-white mb-0">{{ total_admins }}</h2>
-      </div>
+    <div class="d-flex gap-2">
+      <a class="btn btn-light btn-round" href="/shop/">Open Store</a>
+      <a class="btn btn-outline-light btn-round" href="/accounts/logout/">Logout</a>
     </div>
   </div>
+
+  
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="panel p-3 text-white">
+        <div class="text-soft">Total Products</div>
+        <div class="h3 mb-0">{{ total_products }}</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="panel p-3 text-white">
+        <div class="text-soft">Active Products</div>
+        <div class="h3 mb-0">{{ active_products }}</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="panel p-3 text-white">
+        <div class="text-soft">Total Orders</div>
+        <div class="h3 mb-0">{{ total_orders }}</div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="panel p-3 text-white">
+        <div class="text-soft">Customers</div>
+        <div class="h3 mb-0">{{ customers_count }}</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="panel p-3 text-white">
+        <div class="text-soft">Producers</div>
+        <div class="h3 mb-0">{{ producers_count }}</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="panel p-3 text-white">
+        <div class="text-soft">Admins</div>
+        <div class="h3 mb-0">{{ admins_count }}</div>
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="panel p-4 text-white mb-4">
+    <h4 class="mb-1">Producer List</h4>
+    <div class="text-soft mb-3">All producer accounts (for admin visibility).</div>
+
+    <div class="table-responsive">
+      <table class="table table-dark align-middle">
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Postcode</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in producer_list %}
+            <tr>
+              <td>{{ p.username }}</td>
+              <td>{{ p.email }}</td>
+              <td>{{ p.postcode_display|default:"—" }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="3" class="text-center text-soft py-4">No producers found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    
+    <div class="col-lg-6">
+      <div class="panel p-4 text-white h-100">
+        <h4 class="mb-1">Recent Customer Orders</h4>
+        <div class="text-soft mb-3">Latest parent orders (multi-vendor possible).</div>
+
+        <div class="table-responsive">
+          <table class="table table-dark align-middle">
+            <thead>
+              <tr>
+                <th>Order</th>
+                <th>Customer</th>
+                <th>Producers</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for o in recent_orders %}
+                <tr>
+                  <td>#{{ o.id }}</td>
+                  <td>{{ o.customer.username }}</td>
+                  <td>{{ o.producer_names }}</td>
+                  <td>£{{ o.total }}</td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="4" class="text-center text-soft py-4">No orders found.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="col-lg-6">
+      <div class="panel p-4 text-white h-100">
+        <h4 class="mb-1">Producer Orders (Sub-orders)</h4>
+        <div class="text-soft mb-3">One row per producer per parent order.</div>
+
+        <div class="table-responsive">
+          <table class="table table-dark align-middle">
+            <thead>
+              <tr>
+                <th>Sub-order</th>
+                <th>Producer</th>
+                <th>Parent Order</th>
+                <th>Subtotal</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for po in recent_producer_orders %}
+                <tr>
+                  <td>#{{ po.id }}</td>
+                  <td>{{ po.producer.username }}</td>
+                  <td>#{{ po.parent_order.id }}</td>
+                  <td>£{{ po.subtotal }}</td>
+                  <td>{{ po.get_status_display }}</td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="5" class="text-center text-soft py-4">No producer sub-orders yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        
+      </div>
+    </div>
+  </div>
+
 </div>
 {% endblock %}
