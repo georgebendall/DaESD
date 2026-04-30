@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Receipt | Order {{ order.id }}{% endblock %}
+
+{% block content %}
+<div class="glass p-4 mt-4">
+  <div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+      <h2 class="text-white mb-1">Receipt — Order #{{ order.id }}</h2>
+      <div class="text-soft">Date: {{ order.created_at|date:"Y-m-d H:i" }}</div>
+      <div class="text-soft">Customer: {{ order.customer.username }}</div>
+    </div>
+    <div class="text-end">
+      <a class="btn btn-outline-light" href="{% url 'order_detail' order.id %}">Back to order</a>
+    </div>
+  </div>
+
+  <div class="table-responsive mb-4">
+    <table class="table table-dark align-middle">
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Producer</th>
+          <th>Qty</th>
+          <th>Unit</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in order.items.all %}
+        <tr>
+          <td class="text-white">{{ item.product.name }}</td>
+          <td class="text-white">{{ item.product.producer.username }}</td>
+          <td class="text-white">{{ item.quantity }}</td>
+          <td class="text-white">£{{ item.unit_price|floatformat:2 }}</td>
+          <td class="text-white">£{{ item.line_total|floatformat:2 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="p-3 rounded" style="background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);">
+        <div class="text-soft mb-1">Subtotal</div>
+        <div class="h5 mb-0 text-white">£{{ order.subtotal|floatformat:2 }}</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="p-3 rounded" style="background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);">
+        <div class="text-soft mb-1">Commission</div>
+        <div class="h5 mb-0 text-warning">£{{ order.commission_total|floatformat:2 }}</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="p-3 rounded" style="background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);">
+        <div class="text-soft mb-1">Total</div>
+        <div class="h4 mb-0 text-danger">£{{ order.total|floatformat:2 }}</div>
+      </div>
+    </div>
+  </div>
+
+  <h5 class="text-white mb-2">Payment Transactions</h5>
+  {% if txns %}
+    <ul class="text-soft">
+      {% for t in txns %}
+        <li>
+          {{ t.provider }} — {{ t.status }} — £{{ t.amount }} {{ t.currency }}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <div class="text-soft">No payment transactions found.</div>
+  {% endif %}
+
+  <div class="text-soft mt-3">
+    Tip: You can print this page and “Save as PDF”.
+  </div>
+</div>
+{% endblock %}
