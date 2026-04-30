@@ -1,26 +1,16 @@
 from django.urls import path
-from .views import (
-    admin_dashboard,
-    customer_dashboard,
-    producer_dashboard,
-    producer_stock,
-    edit_stock_list,
-    add_product,
-    edit_product,
-    delete_product,
-    add_stock,
-)
+from . import views
 
 urlpatterns = [
-    path("admin-dashboard/", admin_dashboard, name="admin_dashboard"),
-    path("customer-dashboard/", customer_dashboard, name="customer_dashboard"),
+    path("admin-dashboard/", views.admin_dashboard, name="admin_dashboard"),
+    path("customer-dashboard/", views.customer_dashboard, name="customer_dashboard"),
+    path("producer-dashboard/", views.producer_dashboard, name="producer_dashboard"),
 
-    path("producer-dashboard/", producer_dashboard, name="producer_dashboard"),
-    path("producer/stock/", producer_stock, name="producer_stock"),
-    path("producer/edit-stock-list/", edit_stock_list, name="edit_stock_list"),
+    path("producer/stock/", views.producer_stock, name="producer_stock"),
+    path("producer/edit-stock-list/", views.edit_stock_list, name="edit_stock_list"),
 
-    path("producer/add-product/", add_product, name="add_product"),
-    path("producer/edit-product/<int:product_id>/", edit_product, name="edit_product"),
-    path("producer/delete-product/<int:product_id>/", delete_product, name="delete_product"),
-    path("producer/add-stock/<int:product_id>/", add_stock, name="add_stock"),
+    path("producer/add-product/", views.add_product, name="add_product"),
+    path("producer/edit-product/<int:product_id>/", views.edit_product, name="edit_product"),
+    path("producer/delete-product/<int:product_id>/", views.delete_product, name="delete_product"),
+    path("producer/add-stock/<int:product_id>/", views.add_stock, name="add_stock"),
 ]
