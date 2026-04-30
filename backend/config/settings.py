@@ -31,11 +31,8 @@ ALLOWED_HOSTS = []
 
 
 INSTALLED_APPS = [
-   
-    "config.mongo_apps.MongoContentTypesConfig",
-    "config.mongo_apps.MongoAuthConfig",
-
-  
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
@@ -84,16 +81,14 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 # Database
 
-MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
-MONGODB_DB = os.getenv("MONGODB_DB", "brfn_db")
-
-
-# MongoDB is running in Docker and is reachable on localhost:27017
 DATABASES = {
     "default": {
-        "ENGINE": "django_mongodb_backend",   
-        "HOST": MONGODB_URI, 
-        "NAME": MONGODB_DB,                   
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.getenv("POSTGRES_DB", "brfn_db"),
+        "USER": os.getenv("POSTGRES_USER", "brfn_user"),
+        "PASSWORD": os.getenv("POSTGRES_PASSWORD", "brfn_password"),
+        "HOST": os.getenv("POSTGRES_HOST", "db"),
+        "PORT": os.getenv("POSTGRES_PORT", "5432"),
     }
 }
 
@@ -142,13 +137,5 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
-# Django normally creates IDs like 1, 2, 3 (BigAutoField).
-# MongoDB does NOT do that. MongoDB uses ObjectId instead.
-DEFAULT_AUTO_FIELD = "django_mongodb_backend.fields.ObjectIdAutoField"
 
-# These two Django apps come with SQL-style migrations.
-# We generate MongoDB-friendly migrations for them.
-MIGRATION_MODULES = {
-    "auth": "mongo_migrations.auth",
-    "contenttypes": "mongo_migrations.contenttypes",
-}
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
