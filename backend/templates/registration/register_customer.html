@@ -9,7 +9,7 @@
   </div>
 
   <p class="subtitle">
-    Create a customer account to browse and order products.
+    Create an individual, community group, or restaurant account to browse and order products.
   </p>
 
   {% if form.errors %}
@@ -34,13 +34,37 @@
     </div>
 
     <div class="field">
-      <label for="{{ form.phone.id_for_label }}">Phone</label>
+      <label for="{{ form.account_type.id_for_label }}">Account Type (Required)</label>
+      {{ form.account_type }}
+      {{ form.account_type.errors }}
+    </div>
+
+    <div class="field">
+      <label for="{{ form.organisation_name.id_for_label }}">Organisation / Group Name (Required for Community Group and Restaurant)</label>
+      {{ form.organisation_name }}
+      {{ form.organisation_name.errors }}
+    </div>
+
+    <div class="field">
+      <label for="{{ form.institutional_email.id_for_label }}">Institutional Email (Optional)</label>
+      {{ form.institutional_email }}
+      {{ form.institutional_email.errors }}
+    </div>
+
+    <div class="field">
+      <label for="{{ form.phone.id_for_label }}">Phone (Optional)</label>
       {{ form.phone }}
       {{ form.phone.errors }}
     </div>
 
     <div class="field">
-      <label for="{{ form.postcode.id_for_label }}">Postcode</label>
+      <label for="{{ form.address_line1.id_for_label }}">Address (Optional, used as default delivery address)</label>
+      {{ form.address_line1 }}
+      {{ form.address_line1.errors }}
+    </div>
+
+    <div class="field">
+      <label for="{{ form.postcode.id_for_label }}">Postcode (Required)</label>
       {{ form.postcode }}
       {{ form.postcode.errors }}
     </div>

@@ -11,7 +11,10 @@
     </div>
     <div class="d-flex gap-2">
       <a class="btn btn-light btn-round" href="/shop/">Open Store</a>
-      <a class="btn btn-outline-light btn-round" href="/accounts/logout/">Logout</a>
+      <form method="post" action="{% url 'logout' %}" class="d-inline">
+        {% csrf_token %}
+        <button class="btn btn-outline-light btn-round" type="submit">Logout</button>
+      </form>
     </div>
   </div>
 

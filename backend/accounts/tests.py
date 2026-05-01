@@ -12,7 +12,9 @@ class RoleAuthenticationTests(TestCase):
             {
                 "username": "customer1",
                 "email": "customer1@example.com",
+                "account_type": "individual",
                 "phone": "07123456789",
+                "address_line1": "1 Park Street",
                 "postcode": "AB1 2CD",
                 "password1": "StrongPass123!",
                 "password2": "StrongPass123!",
@@ -143,3 +145,111 @@ class RoleAuthenticationTests(TestCase):
 
         self.assertEqual(edit_response.status_code, 404)
         self.assertEqual(delete_response.status_code, 404)
+
+    def test_weak_password_is_rejected(self):
+        response = self.client.post(
+            reverse("register_customer"),
+            {
+                "username": "weakpass",
+                "email": "weak@example.com",
+                "account_type": "individual",
+                "phone": "07123456789",
+                "address_line1": "1 Test Road",
+                "postcode": "BS1 5JG",
+                "password1": "123",
+                "password2": "123",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(User.objects.filter(username="weakpass").exists())
+
+    def test_community_group_registration_requires_organisation_name(self):
+        response = self.client.post(
+            reverse("register_customer"),
+            {
+                "username": "schoolgroup",
+                "email": "school@example.com",
+                "account_type": "community_group",
+                "institutional_email": "school@example.com",
+                "phone": "07123456789",
+                "address_line1": "School Lane",
+                "postcode": "BS1 5JG",
+                "password1": "StrongPass123!",
+                "password2": "StrongPass123!",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(User.objects.filter(username="schoolgroup").exists())
+
+    def test_restaurant_registration_stores_account_type_fields(self):
+        response = self.client.post(
+            reverse("register_customer"),
+            {
+                "username": "restaurant1",
+                "email": "orders@example.com",
+                "account_type": "restaurant",
+                "organisation_name": "The Clifton Kitchen",
+                "institutional_email": "orders@example.com",
+                "phone": "07123456789",
+                "address_line1": "44 Clifton Road",
+                "postcode": "BS6 5QA",
+                "password1": "StrongPass123!",
+                "password2": "StrongPass123!",
+            },
+        )
+
+        self.assertRedirects(response, reverse("customer_dashboard"))
+        profile = CustomerProfile.objects.get(user__username="restaurant1")
+        self.assertEqual(profile.account_type, CustomerProfile.AccountType.RESTAURANT)
+        self.assertEqual(profile.organisation_name, "The Clifton Kitchen")
+
+    def test_login_remember_me_controls_session_expiry(self):
+        user = User.objects.create_user(
+            username="rememberme",
+            email="rememberme@example.com",
+            password="StrongPass123!",
+            role=User.Role.CUSTOMER,
+        )
+        CustomerProfile.objects.create(user=user, postcode="BS1 5JG")
+
+        response = self.client.post(
+            reverse("login"),
+            {"username": "rememberme", "password": "StrongPass123!", "remember_me": "on"},
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertGreater(self.client.session.get_expiry_age(), 60 * 60 * 24)
+
+        self.client.logout()
+        response = self.client.post(
+            reverse("login"),
+            {"username": "rememberme", "password": "StrongPass123!"},
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(self.client.session.get_expire_at_browser_close(), True)
+
+    def test_login_lockout_after_repeated_failures(self):
+        User.objects.create_user(
+            username="lockeduser",
+            email="locked@example.com",
+            password="StrongPass123!",
+            role=User.Role.CUSTOMER,
+        )
+
+        for _ in range(5):
+            response = self.client.post(
+                reverse("login"),
+                {"username": "lockeduser", "password": "wrong-password"},
+            )
+            self.assertEqual(response.status_code, 200)
+
+        blocked = self.client.post(
+            reverse("login"),
+            {"username": "lockeduser", "password": "StrongPass123!"},
+        )
+
+        self.assertContains(blocked, "Too many failed login attempts")
+        self.assertFalse("_auth_user_id" in self.client.session)

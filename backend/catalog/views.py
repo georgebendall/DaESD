@@ -1,11 +1,20 @@
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, render
+from django.utils import timezone
 
 from .models import Allergen, Category, Product
 
 
 def product_list(request):
+    return product_list_page(request)
+
+
+def surplus_deals_page(request):
+    if request.GET.copy().get("surplus") != "1":
+        mutable_get = request.GET.copy()
+        mutable_get["surplus"] = "1"
+        request.GET = mutable_get
     return product_list_page(request)
 
 
@@ -16,6 +25,8 @@ def product_list_page(request):
     exclude_allergen_id = (request.GET.get("exclude_allergen") or "").strip()
     availability = (request.GET.get("availability") or "").strip()
     organic_only = (request.GET.get("organic") or "").strip()
+    surplus_only = (request.GET.get("surplus") or "").strip()
+    customer_postcode_missing = False
 
     qs = (
         Product.objects.filter(is_active=True)
@@ -48,12 +59,24 @@ def product_list_page(request):
     if organic_only == "1":
         qs = qs.filter(is_organic=True)
 
+    if surplus_only == "1":
+        qs = qs.filter(
+            is_surplus=True,
+            surplus_discount_percent__gt=0,
+            surplus_expires_at__gt=timezone.now(),
+        )
+
     qs = qs.distinct().order_by("name")
 
     paginator = Paginator(qs, 12)
     page_obj = paginator.get_page(request.GET.get("page") or 1)
 
     if request.user.is_authenticated and getattr(request.user, "role", "") == "customer":
+        customer_postcode_missing = not getattr(
+            getattr(request.user, "customer_profile", None),
+            "postcode",
+            "",
+        ).strip()
         for product in page_obj.object_list:
             product.food_miles = product.food_miles_for_customer(request.user)
 
@@ -77,6 +100,8 @@ def product_list_page(request):
             "availability": availability,
             "availability_choices": Product.AvailabilityStatus.choices,
             "organic_only": organic_only,
+            "surplus_only": surplus_only,
+            "customer_postcode_missing": customer_postcode_missing,
         },
     )
 
@@ -89,7 +114,13 @@ def product_detail_page(request, product_id):
     )
 
     food_miles = None
+    customer_postcode_missing = False
     if request.user.is_authenticated and getattr(request.user, "role", "") == "customer":
+        customer_postcode_missing = not getattr(
+            getattr(request.user, "customer_profile", None),
+            "postcode",
+            "",
+        ).strip()
         food_miles = product.food_miles_for_customer(request.user)
 
     return render(
@@ -98,5 +129,6 @@ def product_detail_page(request, product_id):
         {
             "product": product,
             "food_miles": food_miles,
+            "customer_postcode_missing": customer_postcode_missing,
         },
     )

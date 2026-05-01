@@ -2,98 +2,124 @@
 {% block title %}My Cart | BRFN{% endblock %}
 
 {% block content %}
-<div class="glass p-4 mt-4">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-      <h2 class="text-white mb-1">My Cart</h2>
-      <p class="text-soft mb-0">Review your items before checkout.</p>
+<div class="page-shell cart-page">
+  <div class="section-card cart-header-card mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div>
+        <h1 class="page-title">My Cart</h1>
+        <p class="page-subtitle">Review quantities, check food miles, and complete checkout without losing your place.</p>
+      </div>
+      <div class="d-flex gap-2 flex-wrap">
+        <a href="{{ continue_url }}" class="btn btn-outline-secondary">Continue Shopping</a>
+        <a href="{% url 'product_list' %}" class="btn btn-primary">Back to Store</a>
+      </div>
     </div>
-    <a href="{{ continue_url }}" class="btn btn-outline-light btn-round">Continue Shopping</a>
   </div>
 
   {% if cart_items %}
-    <div class="table-responsive mb-4">
-      <table class="table table-dark align-middle">
-        <thead>
-          <tr>
-            <th>Product</th>
-            <th>Price</th>
-            <th style="width: 180px;">Quantity</th>
-            <th>Food Miles</th>
-            <th>Line Total</th>
-            <th class="text-end">Actions</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {% for item in cart_items %}
-            <tr>
-              <td>
-                <strong>{{ item.product.name }}</strong>
+    <div class="row g-4">
+      <div class="col-xl-8">
+        {% for section in producer_sections %}
+          <div class="section-card cart-table-card mb-4">
+            <div class="cart-producer-header">
+              <div>
+                <h2 class="section-title">{{ section.producer_name }}</h2>
                 <div class="small text-soft">
-                  {{ item.product.category.name }}
+                  {% if section.address_line1 %}{{ section.address_line1 }}{% endif %}
+                  {% if section.city %} · {{ section.city }}{% endif %}
+                  {% if section.postcode %} · {{ section.postcode }}{% endif %}
                 </div>
-              </td>
+              </div>
+              <div class="text-end">
+                <div class="small text-soft">Producer subtotal</div>
+                <strong>£{{ section.subtotal|floatformat:2 }}</strong>
+              </div>
+            </div>
 
-              <td class="text-white">£{{ item.product.price|floatformat:2 }}</td>
-
-              <td>
-                <form method="post" action="{% url 'cart_update' item.id %}" class="d-flex gap-2">
-                  {% csrf_token %}
-                  <input
-                    type="number"
-                    name="quantity"
-                    value="{{ item.quantity }}"
-                    min="1"
-                    class="form-control"
-                  >
-                  <button type="submit" class="btn btn-outline-light btn-sm">Update</button>
-                </form>
-              </td>
-
-              <td>
-                {% if item.food_miles is not None %}
-                  <span class="badge text-bg-info">{{ item.food_miles }} miles</span>
-                {% else %}
-                  <span class="text-soft">Unavailable</span>
-                {% endif %}
-              </td>
-
-              <td class="text-white fw-semibold">£{{ item.line_total|floatformat:2 }}</td>
-
-              <td class="text-end">
-                <form method="post" action="{% url 'cart_remove' item.id %}" class="d-inline">
-                  {% csrf_token %}
-                  <button type="submit" class="btn btn-danger btn-sm">Remove</button>
-                </form>
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-      <div>
-        <div class="text-soft">Subtotal</div>
-        <div class="h3 text-danger mb-0">£{{ cart.subtotal|floatformat:2 }}</div>
-
-        {% if has_food_miles %}
-          <div class="text-soft mt-3">Total food miles</div>
-          <div class="h5 text-white mb-0">{{ total_food_miles }} miles</div>
-        {% endif %}
+            <div class="table-responsive">
+              <table class="table align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Unit Price</th>
+                    <th style="width: 190px;">Quantity</th>
+                    <th>Unit</th>
+                    <th>Food Miles</th>
+                    <th>Subtotal</th>
+                    <th class="text-end">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for item in section.items %}
+                    <tr>
+                      <td>
+                        <strong>{{ item.product.name }}</strong>
+                        <div class="small text-soft">{{ item.product.category.name }}</div>
+                      </td>
+                      <td>
+                        {% if item.product.surplus_is_active %}
+                          <div>£{{ item.product.effective_price|floatformat:2 }}</div>
+                          <div class="small text-decoration-line-through text-muted">£{{ item.product.price|floatformat:2 }}</div>
+                        {% else %}
+                          £{{ item.product.price|floatformat:2 }}
+                        {% endif %}
+                      </td>
+                      <td>
+                        <form method="post" action="{% url 'cart_update' item.id %}" class="cart-quantity-form">
+                          {% csrf_token %}
+                          <input type="number" name="quantity" value="{{ item.quantity }}" min="1" class="form-control">
+                          <button type="submit" class="btn btn-outline-secondary btn-sm">Update</button>
+                        </form>
+                        <div class="small text-soft mt-1">{{ item.quantity_display }}</div>
+                      </td>
+                      <td>{{ item.unit_label }}</td>
+                      <td>
+                        {% if item.food_miles is not None %}
+                          <span class="badge text-bg-info">{{ item.food_miles }} miles</span>
+                        {% else %}
+                          <span class="text-soft">Unavailable</span>
+                        {% endif %}
+                      </td>
+                      <td class="fw-semibold">£{{ item.line_total|floatformat:2 }}</td>
+                      <td class="text-end">
+                        <form method="post" action="{% url 'cart_remove' item.id %}" class="d-inline">
+                          {% csrf_token %}
+                          <button type="submit" class="btn btn-danger btn-sm">Remove</button>
+                        </form>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        {% endfor %}
       </div>
 
-      <form method="post" action="{% url 'checkout_now' %}">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-success btn-lg btn-round">
-          Checkout
-        </button>
-      </form>
+      <div class="col-xl-4">
+        <div class="section-card cart-summary-card">
+          <h2 class="section-title">Cart summary</h2>
+          <div class="summary-row">
+            <span>Subtotal</span>
+            <strong>£{{ cart.subtotal|floatformat:2 }}</strong>
+          </div>
+          {% if has_food_miles %}
+            <div class="summary-row">
+              <span>Total food miles</span>
+              <strong>{{ total_food_miles }} miles</strong>
+            </div>
+          {% endif %}
+
+          <div class="alert alert-info mt-4">
+            The next step shows a full producer-by-producer checkout review before you place the order.
+          </div>
+          <a href="{% url 'checkout_now' %}" class="btn btn-primary btn-lg w-100 mt-3">Review Checkout</a>
+        </div>
+      </div>
     </div>
   {% else %}
-    <div class="alert alert-info mb-0">
-      Your cart is empty.
+    <div class="section-card empty-state-card">
+      <div class="alert alert-info mb-0">Your cart is empty.</div>
     </div>
   {% endif %}
 </div>

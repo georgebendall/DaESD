@@ -13,9 +13,16 @@
       <div>
         <h2 class="mb-1">{{ product.name }}</h2>
         <div class="text-muted">Category: {{ product.category.name }}</div>
+        <div class="text-muted">Unit: {{ product.unit_label }}</div>
       </div>
       <div class="text-end">
-        <div class="h4 mb-2">£{{ product.price|floatformat:2 }}</div>
+        {% if product.surplus_is_active %}
+          <div class="badge text-bg-danger mb-2">-{{ product.surplus_discount_percent }}% surplus deal</div>
+          <div class="h4 mb-0">£{{ product.effective_price|floatformat:2 }} per {{ product.unit_label }}</div>
+          <div class="text-muted text-decoration-line-through">£{{ product.price|floatformat:2 }}</div>
+        {% else %}
+          <div class="h4 mb-2">£{{ product.price|floatformat:2 }} per {{ product.unit_label }}</div>
+        {% endif %}
         {% if product.is_organic %}
           <span class="badge text-bg-success">Certified Organic</span>
         {% else %}
@@ -28,9 +35,24 @@
       <p class="text-muted">{{ product.description }}</p>
     {% endif %}
 
+    {% if product.surplus_is_active %}
+      <div class="alert alert-danger">
+        Last minute surplus deal.
+        {% if product.surplus_note %}{{ product.surplus_note }}.{% endif %}
+        Expires: {{ product.surplus_expires_at|date:"Y-m-d H:i" }}
+        <br>
+        Time remaining: {{ product.surplus_expires_at|timeuntil }}
+        {% if product.best_before_date %}
+          <br>
+          Best before: {{ product.best_before_date }}
+        {% endif %}
+      </div>
+    {% endif %}
+
     <div class="mb-4">
       <h5>Availability</h5>
       <p class="mb-0">{{ product.get_availability_status_display }}</p>
+      <p class="mb-0 text-muted">Stock available: {{ product.stock }} {{ product.unit_label }}</p>
     </div>
 
     <hr>
@@ -44,10 +66,13 @@
       {% endif %}
     </p>
 
-    <p class="text-muted">
-      Postcode:
-      {{ product.producer.producer_profile.postcode|default:"Not provided" }}
-    </p>
+      <p class="text-muted">
+        Postcode:
+        {{ product.producer.producer_profile.postcode|default:"Not provided" }}
+      </p>
+      {% if product.producer.producer_profile.contact_phone %}
+        <p class="text-muted mb-0">Contact: {{ product.producer.producer_profile.contact_phone }}</p>
+      {% endif %}
 
     <!-- Food miles (TC-013) -->
     <div class="mb-4">
@@ -59,9 +84,15 @@
           from your delivery postcode.
         </div>
       {% else %}
-        <p class="text-muted">
-          Food miles unavailable (postcode missing).
-        </p>
+        {% if customer_postcode_missing %}
+          <p class="text-muted">
+            Add your postcode to your customer profile to see food miles.
+          </p>
+        {% else %}
+          <p class="text-muted">
+            Food miles unavailable for this postcode pair.
+          </p>
+        {% endif %}
       {% endif %}
     </div>
 
@@ -89,9 +120,10 @@
         <form method="POST" action="{% url 'cart_add' product.id %}" class="d-flex gap-2">
           {% csrf_token %}
           <input type="hidden" name="next" value="{{ request.get_full_path }}">
-          <input type="number" name="quantity" value="1" min="1" class="form-control" style="width: 100px;">
+          <input type="number" name="quantity" value="1" min="1" class="form-control" style="width: 120px;">
           <button type="submit" class="btn btn-success">Add to cart</button>
         </form>
+        <div class="small text-muted mt-2">Enter quantity in {{ product.unit_label }}.</div>
       {% else %}
         <button class="btn btn-secondary" disabled>Out of stock</button>
       {% endif %}

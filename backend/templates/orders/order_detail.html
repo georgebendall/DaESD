@@ -8,54 +8,146 @@
     <p class="text-soft mb-0">Here is the full summary of your order.</p>
   </div>
 
-  <div class="table-responsive mb-4">
-    <table class="table table-dark align-middle">
-      <thead>
-        <tr>
-          <th>Product</th>
-          <th>Qty</th>
-          <th>Unit Price</th>
-          <th>Total</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for item in order.items.all %}
-          <tr>
-            <td class="text-white">{{ item.product.name }}</td>
-            <td class="text-white">{{ item.quantity }}</td>
-            <td class="text-white">£{{ item.unit_price|floatformat:2 }}</td>
-            <td class="text-white">£{{ item.line_total|floatformat:2 }}</td>
-          </tr>
-        {% empty %}
-          <tr>
-            <td colspan="4" class="text-center text-soft py-4">No items found in this order.</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+  {% for section in producer_sections %}
+    <div class="surface-tile p-3 mb-4">
+      <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
+        <div>
+          <h5 class="text-white mb-1">{{ section.producer_name }}</h5>
+          <div class="text-soft small">
+            {% if section.contact_phone %}{{ section.contact_phone }}{% endif %}
+            {% if section.postcode %} · {{ section.postcode }}{% endif %}
+          </div>
+        </div>
+        <div class="text-end">
+          <div class="text-soft small">Producer subtotal</div>
+          <strong class="text-white">£{{ section.subtotal|floatformat:2 }}</strong>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-dark align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Qty</th>
+              <th>Unit</th>
+              <th>Unit Price</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in section.items %}
+              <tr>
+                <td class="text-white">{{ item.product.name }}</td>
+                <td class="text-white">{{ item.quantity_display }}</td>
+                <td class="text-white">{{ item.unit_label }}</td>
+                <td class="text-white">£{{ item.unit_price|floatformat:2 }}</td>
+                <td class="text-white">£{{ item.line_total|floatformat:2 }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% empty %}
+    <div class="alert alert-info">No items found in this order.</div>
+  {% endfor %}
 
   <div class="row g-3 mb-4">
     <div class="col-md-4">
-      <div class="p-3 rounded" style="background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);">
+      <div class="surface-tile p-3">
         <div class="text-soft mb-1">Subtotal</div>
         <div class="h5 mb-0 text-white">£{{ order.subtotal|floatformat:2 }}</div>
       </div>
     </div>
 
     <div class="col-md-4">
-      <div class="p-3 rounded" style="background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);">
+      <div class="surface-tile p-3">
         <div class="text-soft mb-1">Commission</div>
         <div class="h5 mb-0 text-warning">£{{ order.commission_total|floatformat:2 }}</div>
       </div>
     </div>
 
     <div class="col-md-4">
-      <div class="p-3 rounded" style="background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);">
+      <div class="surface-tile p-3">
         <div class="text-soft mb-1">Total</div>
         <div class="h4 mb-0 text-danger">£{{ order.total|floatformat:2 }}</div>
       </div>
     </div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-6">
+      <div class="surface-tile p-3">
+        <div class="text-soft mb-1">Delivery address</div>
+        <div class="text-white">{{ order.delivery_address|linebreaksbr|default:"Not provided" }}</div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="surface-tile p-3">
+        <div class="text-soft mb-1">Delivery postcode</div>
+        <div class="text-white">{{ customer_profile.postcode|default:"Not provided" }}</div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="surface-tile p-3">
+        <div class="text-soft mb-1">Contact phone</div>
+        <div class="text-white">{{ customer_profile.phone|default:"Not provided" }}</div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="surface-tile p-3">
+        <div class="text-soft mb-1">Special instructions</div>
+        <div class="text-white">{{ order.special_instructions|default:"None" }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mb-4">
+    <h5 class="text-white mb-3">Payment information</h5>
+    {% if payment_transactions %}
+      <div class="table-responsive">
+        <table class="table table-dark align-middle">
+          <thead>
+            <tr>
+              <th>Provider</th>
+              <th>Status</th>
+              <th>Amount</th>
+              <th>Reference</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for txn in payment_transactions %}
+              <tr>
+                <td class="text-white">{{ txn.provider|title }}</td>
+                <td class="text-white">{{ txn.get_status_display }}</td>
+                <td class="text-white">£{{ txn.amount|floatformat:2 }} {{ txn.currency }}</td>
+                <td class="text-white">{{ txn.masked_reference }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="text-soft">No payment transactions recorded for this order.</div>
+    {% endif %}
+  </div>
+
+  <div class="mb-4">
+    <h5 class="text-white mb-3">Producer contacts</h5>
+    {% if producer_contacts %}
+      <ul class="text-soft mb-0">
+        {% for producer in producer_contacts %}
+          <li>
+            {{ producer.producer_profile.business_name|default:producer.username }}
+            {% if producer.email %} — {{ producer.email }}{% endif %}
+            {% if producer.producer_profile.contact_phone %} — {{ producer.producer_profile.contact_phone }}{% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="text-soft">No producer contacts found for this order.</div>
+    {% endif %}
   </div>
 
   <div>

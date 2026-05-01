@@ -1,9 +1,11 @@
+from datetime import timedelta
 from decimal import Decimal
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.utils import timezone
 
 from accounts.models import User
 
@@ -47,6 +49,9 @@ class Order(models.Model):
     subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
     commission_total = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
     total = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+    delivery_address = models.TextField(blank=True)
+    delivery_date = models.DateField(blank=True, null=True)
+    special_instructions = models.TextField(blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -241,7 +246,10 @@ class CartItem(models.Model):
 
     @property
     def unit_price(self) -> Decimal:
-        return getattr(self.product, "price", Decimal("0.00"))
+        product = getattr(self, "product", None)
+        if not product:
+            return Decimal("0.00")
+        return getattr(product, "effective_price", product.price)
 
     @property
     def line_total(self) -> Decimal:
@@ -255,6 +263,11 @@ class RecurringOrder(models.Model):
     """
     Template for weekly/fortnightly orders.
     """
+
+    class Status(models.TextChoices):
+        ACTIVE = "active", "Active"
+        PAUSED = "paused", "Paused"
+        CANCELLED = "cancelled", "Cancelled"
 
     customer = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -271,8 +284,14 @@ class RecurringOrder(models.Model):
 
     order_day = models.CharField(max_length=10)
     delivery_day = models.CharField(max_length=10)
+    next_delivery_date = models.DateField(blank=True, null=True)
 
     is_active = models.BooleanField(default=True)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.ACTIVE,
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     def clean(self) -> None:
@@ -281,6 +300,29 @@ class RecurringOrder(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.customer})"
+
+    def schedule_next_delivery(self):
+        weekday_map = {
+            "monday": 0,
+            "tuesday": 1,
+            "wednesday": 2,
+            "thursday": 3,
+            "friday": 4,
+            "saturday": 5,
+            "sunday": 6,
+        }
+        target = weekday_map.get((self.delivery_day or "").lower(), 0)
+        today = timezone.localdate()
+        days_ahead = (target - today.weekday()) % 7
+        if days_ahead == 0:
+            days_ahead = 7
+        if self.recurrence == "fortnightly":
+            days_ahead += 7
+        self.next_delivery_date = today + timedelta(days=days_ahead)
+
+    def save(self, *args, **kwargs):
+        self.is_active = self.status == self.Status.ACTIVE
+        super().save(*args, **kwargs)
 
 
 class RecurringOrderItem(models.Model):

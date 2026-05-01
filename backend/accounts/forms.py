@@ -1,8 +1,8 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth.password_validation import validate_password
 
-from .models import User
+from .models import CustomerProfile, User
 
 
 class BaseRegistrationForm(UserCreationForm):
@@ -35,16 +35,44 @@ class BaseRegistrationForm(UserCreationForm):
 
 
 class CustomerRegistrationForm(BaseRegistrationForm):
+    account_type = forms.ChoiceField(choices=CustomerProfile.AccountType.choices)
     phone = forms.CharField(max_length=30, required=False)
-    postcode = forms.CharField(max_length=12, required=False)
+    postcode = forms.CharField(max_length=12, required=True)
+    organisation_name = forms.CharField(max_length=160, required=False)
+    institutional_email = forms.EmailField(required=False)
+    address_line1 = forms.CharField(max_length=120, required=False)
 
     class Meta(UserCreationForm.Meta):
         model = User
-        fields = ("username", "email", "phone", "postcode", "password1", "password2")
+        fields = (
+            "username",
+            "email",
+            "account_type",
+            "organisation_name",
+            "institutional_email",
+            "phone",
+            "address_line1",
+            "postcode",
+            "password1",
+            "password2",
+        )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._apply_bootstrap_classes()
+
+    def clean(self):
+        cleaned_data = super().clean()
+        account_type = cleaned_data.get("account_type")
+        organisation_name = (cleaned_data.get("organisation_name") or "").strip()
+
+        if account_type in {
+            CustomerProfile.AccountType.COMMUNITY_GROUP,
+            CustomerProfile.AccountType.RESTAURANT,
+        } and not organisation_name:
+            self.add_error("organisation_name", "Organisation name is required for this account type.")
+
+        return cleaned_data
 
 
 class ProducerRegistrationForm(BaseRegistrationForm):
@@ -71,3 +99,13 @@ class ProducerRegistrationForm(BaseRegistrationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._apply_bootstrap_classes()
+
+
+class RememberMeAuthenticationForm(AuthenticationForm):
+    remember_me = forms.BooleanField(required=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["username"].widget.attrs.update({"class": "form-control"})
+        self.fields["password"].widget.attrs.update({"class": "form-control"})
+        self.fields["remember_me"].widget.attrs.update({"class": "form-check-input"})

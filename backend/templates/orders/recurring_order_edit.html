@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Edit Recurring Order | BRFN{% endblock %}
+
+{% block content %}
+<div class="page-shell">
+  <div class="section-card cart-header-card mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div>
+        <h1 class="page-title">Edit Recurring Order</h1>
+        <p class="page-subtitle">Update the recurrence settings without changing the original product template.</p>
+      </div>
+      <a href="{% url 'recurring_orders' %}" class="btn btn-outline-secondary">Back</a>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-6">
+      <div class="section-card p-4">
+        <form method="post">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label">Template Name</label>
+            {{ form.name }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Recurrence</label>
+            {{ form.recurrence }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Recurring Day</label>
+            {{ form.order_day }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Delivery Day</label>
+            {{ form.delivery_day }}
+          </div>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="section-card p-4">
+        <h2 class="section-title mb-3">Template contents</h2>
+        {% for section in recurring_order.producer_sections %}
+          <div class="surface-tile p-3 mb-3">
+            <strong>{{ section.producer_name }}</strong>
+            <ul class="mb-0 mt-2">
+              {% for item in section.items %}
+                <li>{{ item.product.name }} — {{ item.quantity_display }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

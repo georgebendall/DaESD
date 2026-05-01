@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Recurring Orders | BRFN{% endblock %}
+
+{% block content %}
+<div class="page-shell">
+  <div class="section-card cart-header-card mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div>
+      <h1 class="page-title">Recurring Orders</h1>
+      <p class="page-subtitle">Manage weekly and fortnightly templates, pause or cancel them, and load the next order into your cart for editing.</p>
+    </div>
+    <a href="{% url 'cart_page' %}" class="btn btn-outline-secondary">Back to Cart</a>
+    </div>
+  </div>
+
+  {% if recurring_orders %}
+    <div class="row g-3">
+      {% for recurring in recurring_orders %}
+        <div class="col-12">
+          <div class="section-card p-4">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
+              <div>
+                <h4 class="mb-1">{{ recurring.name }}</h4>
+                <div class="text-soft">
+                  {{ recurring.get_recurrence_display }} order every {{ recurring.order_day|title }}
+                  for {{ recurring.delivery_day|title }} delivery
+                </div>
+                <div class="text-soft">
+                  Next delivery: {{ recurring.next_delivery_date|default:"Not scheduled" }}
+                </div>
+              </div>
+              <div class="d-flex gap-2 flex-wrap">
+                <span class="badge {% if recurring.status == 'active' %}bg-success{% elif recurring.status == 'cancelled' %}bg-danger{% else %}bg-secondary{% endif %} p-2">
+                  {{ recurring.get_status_display }}
+                </span>
+                <a class="btn btn-outline-secondary btn-sm" href="{% url 'recurring_order_edit' recurring.id %}">Edit</a>
+                <form method="post" action="{% url 'recurring_order_toggle' recurring.id %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="{% if recurring.status == 'active' %}pause{% else %}resume{% endif %}">
+                  <button class="btn btn-outline-secondary btn-sm" type="submit">
+                    {% if recurring.status == 'active' %}Pause{% else %}Resume{% endif %}
+                  </button>
+                </form>
+                {% if recurring.status != 'cancelled' %}
+                  <form method="post" action="{% url 'recurring_order_toggle' recurring.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="cancel">
+                    <button class="btn btn-danger btn-sm" type="submit">Cancel</button>
+                  </form>
+                {% endif %}
+                <form method="post" action="{% url 'recurring_order_load_to_cart' recurring.id %}">
+                  {% csrf_token %}
+                  <button class="btn btn-primary btn-sm" type="submit">Load Next Order to Cart</button>
+                </form>
+              </div>
+            </div>
+
+            {% for section in recurring.producer_sections %}
+              <div class="surface-tile p-3 mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <strong>{{ section.producer_name }}</strong>
+                  <span class="small text-soft">Subtotal: £{{ section.subtotal|floatformat:2 }}</span>
+                </div>
+                <div class="table-responsive">
+                  <table class="table align-middle mb-0">
+                    <thead>
+                      <tr>
+                        <th>Product</th>
+                        <th>Qty</th>
+                        <th>Unit</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for item in section.items %}
+                        <tr>
+                          <td>{{ item.product.name }}</td>
+                          <td>{{ item.quantity_display }}</td>
+                          <td>{{ item.unit_label }}</td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="alert alert-info mb-0">You have no recurring orders yet.</div>
+  {% endif %}
+</div>
+{% endblock %}

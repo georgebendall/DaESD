@@ -1,22 +1,42 @@
 /* static/css/auth.css */
-/* This file styles your login page. Simple, clean, modern. */
+/* BRFN login/register page theme */
+
+/* ================================
+   BRFN Palette
+   Deep Teal: #507255
+   Sea Green: #488B49
+   Medium Green: #4AAD52
+   Sunflower Gold: #FFBF46
+   Burnt Peach: #DE6B48
+================================ */
 
 :root {
-  --bg: #07070a;
-  --text: #f6f7fb;
-  --muted: rgba(246, 247, 251, 0.7);
-  --card: rgba(255, 255, 255, 0.08);
-  --border: rgba(255, 255, 255, 0.14);
-  --shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  --bg: #f6f3ea;
+  --text: #1f2a1f;
+  --muted: #405240;
+  --card: rgba(255, 253, 248, 0.96);
+  --border: rgba(80, 114, 85, 0.22);
+  --shadow: 0 20px 60px rgba(80, 114, 85, 0.18);
 
-  --accent1: #5606ff;   /* purple */
-  --accent2: #fe8989;   /* pink */
-  --accent3: #0b0b12;   /* near black */
+  --deep-teal: #507255;
+  --sea-green: #488B49;
+  --medium-green: #4AAD52;
+  --sunflower-gold: #FFBF46;
+  --burnt-peach: #DE6B48;
+
+  --accent1: #507255;
+  --accent2: #488B49;
+  --accent3: #4AAD52;
+  --accent4: #FFBF46;
+  --danger: #DE6B48;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
-html, body {
+html,
+body {
   height: 100%;
   margin: 0;
   background: var(--bg);
@@ -32,14 +52,18 @@ html, body {
   position: relative;
   overflow: hidden;
   padding: 24px;
+  background:
+    radial-gradient(circle at top left, rgba(80, 114, 85, 0.35), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(255, 191, 70, 0.25), transparent 34%),
+    linear-gradient(135deg, #f6f3ea 0%, #edf3ea 100%);
 }
 
-/* Fake "shader gradient" background: 3 blurred blobs moving */
+/* Soft BRFN background blobs */
 .bg {
   position: absolute;
   inset: -30%;
-  filter: blur(40px);
-  opacity: 0.9;
+  filter: blur(42px);
+  opacity: 0.8;
   z-index: 0;
 }
 
@@ -48,43 +72,42 @@ html, body {
   width: 520px;
   height: 520px;
   border-radius: 999px;
-  transform: translate3d(0,0,0);
-  mix-blend-mode: screen;
+  transform: translate3d(0, 0, 0);
+  mix-blend-mode: multiply;
 }
 
 .blob.one {
-  background: radial-gradient(circle at 30% 30%, var(--accent1), transparent 55%);
+  background: radial-gradient(circle at 30% 30%, rgba(80, 114, 85, 0.75), transparent 58%);
   top: 10%;
   left: 15%;
   animation: float1 10s ease-in-out infinite;
 }
 
 .blob.two {
-  background: radial-gradient(circle at 70% 40%, var(--accent2), transparent 58%);
+  background: radial-gradient(circle at 70% 40%, rgba(74, 173, 82, 0.58), transparent 60%);
   top: 30%;
   right: 10%;
   animation: float2 12s ease-in-out infinite;
 }
 
 .blob.three {
-  background: radial-gradient(circle at 50% 50%, rgba(0,0,0,0), transparent 60%),
-              radial-gradient(circle at 50% 50%, var(--accent3), transparent 60%);
+  background: radial-gradient(circle at 50% 50%, rgba(255, 191, 70, 0.5), transparent 60%);
   bottom: 5%;
   left: 40%;
   animation: float3 14s ease-in-out infinite;
 }
 
-/* A subtle grain so it feels less flat */
+/* Subtle grain */
 .grain {
   position: absolute;
   inset: 0;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)' opacity='.18'/%3E%3C/svg%3E");
-  opacity: 0.18;
+  opacity: 0.14;
   z-index: 1;
   pointer-events: none;
 }
 
-/* The card */
+/* Main card */
 .card {
   width: 100%;
   max-width: 420px;
@@ -96,6 +119,7 @@ html, body {
   border-radius: 18px;
   padding: 22px;
   backdrop-filter: blur(14px);
+  color: var(--text);
 }
 
 .brand {
@@ -109,13 +133,15 @@ html, body {
   width: 12px;
   height: 12px;
   border-radius: 999px;
-  background: linear-gradient(135deg, var(--accent1), var(--accent2));
-  box-shadow: 0 0 18px rgba(254, 137, 137, 0.35);
+  background: linear-gradient(135deg, var(--deep-teal), var(--medium-green));
+  box-shadow: 0 0 18px rgba(80, 114, 85, 0.28);
 }
 
 h1 {
-  font-size: 18px;
+  font-size: 20px;
   margin: 0;
+  color: var(--deep-teal);
+  font-weight: 800;
 }
 
 p.subtitle {
@@ -133,22 +159,49 @@ p.subtitle {
 
 label {
   font-size: 12px;
-  color: var(--muted);
+  color: var(--text);
+  font-weight: 700;
 }
 
-input {
+/* Text inputs only — this avoids making checkboxes huge */
+input:not([type="checkbox"]),
+select,
+textarea {
   width: 100%;
   padding: 11px 12px;
   border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.16);
-  background: rgba(10, 10, 18, 0.6);
+  border: 1.5px solid var(--border);
+  background: #fffdf8;
   color: var(--text);
   outline: none;
 }
 
-input:focus {
-  border-color: rgba(86, 6, 255, 0.55);
-  box-shadow: 0 0 0 4px rgba(86, 6, 255, 0.18);
+input:not([type="checkbox"]):focus,
+select:focus,
+textarea:focus {
+  border-color: var(--medium-green);
+  box-shadow: 0 0 0 4px rgba(74, 173, 82, 0.16);
+}
+
+/* Fix remember me checkbox */
+input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  min-height: 16px;
+  margin: 0 8px 0 0;
+  accent-color: var(--medium-green);
+  cursor: pointer;
+}
+
+.remember,
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 12px;
+  color: var(--text);
+  font-size: 13px;
 }
 
 .actions {
@@ -157,37 +210,28 @@ input:focus {
   margin-top: 14px;
 }
 
-button {
+/* Main buttons */
+button,
+.auth-link-button {
   width: 100%;
   padding: 11px 12px;
   border: 0;
   border-radius: 12px;
-  color: white;
-  font-weight: 600;
-  background: linear-gradient(135deg, var(--accent1), var(--accent2));
+  color: #ffffff;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--deep-teal), var(--sea-green));
   cursor: pointer;
+  text-align: center;
+  text-decoration: none;
 }
 
-button:hover {
-  filter: brightness(1.05);
+button:hover,
+.auth-link-button:hover {
+  background: linear-gradient(135deg, var(--sea-green), var(--medium-green));
+  filter: brightness(1.03);
 }
 
-.small {
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.error {
-  border: 1px solid rgba(255, 80, 80, 0.35);
-  background: rgba(255, 80, 80, 0.10);
-  color: rgba(255, 230, 230, 0.95);
-  padding: 10px 12px;
-  border-radius: 12px;
-  margin-bottom: 12px;
-  font-size: 13px;
-}
-
-.auth-link-button,
+/* Secondary link button, e.g. Create account */
 .auth-link-secondary {
   display: block;
   width: 100%;
@@ -195,41 +239,92 @@ button:hover {
   text-decoration: none;
   border-radius: 12px;
   padding: 11px 12px;
+  color: var(--deep-teal);
+  border: 1.5px solid var(--border);
+  background: rgba(80, 114, 85, 0.08);
+  font-weight: 800;
 }
 
-.auth-link-button {
-  color: white;
-  font-weight: 600;
-  background: linear-gradient(135deg, var(--accent1), var(--accent2));
+.auth-link-secondary:hover {
+  background: rgba(255, 191, 70, 0.22);
+  color: var(--deep-teal);
+  border-color: rgba(80, 114, 85, 0.35);
 }
 
-.auth-link-button:hover {
-  filter: brightness(1.05);
+a {
+  color: var(--sea-green);
+  font-weight: 700;
 }
 
-.auth-link-secondary {
+a:hover {
+  color: var(--burnt-peach);
+}
+
+.small {
+  font-size: 12px;
   color: var(--muted);
-  border: 1px solid rgba(255,255,255,0.16);
-  background: rgba(10, 10, 18, 0.35);
+}
+
+/* Error messages */
+.error,
+.errorlist,
+ul.errorlist {
+  border: 1px solid rgba(222, 107, 72, 0.45);
+  background: rgba(222, 107, 72, 0.14);
+  color: #6e2f1c;
+  padding: 10px 12px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  font-size: 13px;
 }
 
 ul.errorlist {
-  margin: 4px 0 0;
-  padding-left: 18px;
-  color: #ffb3b3;
-  font-size: 12px;
+  margin: 4px 0 12px;
+  padding-left: 28px;
+}
+
+/* Success/info messages */
+.success,
+.alert-success {
+  border: 1px solid rgba(74, 173, 82, 0.35);
+  background: rgba(74, 173, 82, 0.12);
+  color: #2f6f35;
+  padding: 10px 12px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+/* Tip text */
+.card small,
+.card .tip {
+  color: var(--muted);
 }
 
 /* Animations */
 @keyframes float1 {
-  0%, 100% { transform: translate(0px, 0px) scale(1); }
-  50% { transform: translate(60px, 40px) scale(1.05); }
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  50% {
+    transform: translate(60px, 40px) scale(1.05);
+  }
 }
+
 @keyframes float2 {
-  0%, 100% { transform: translate(0px, 0px) scale(1); }
-  50% { transform: translate(-50px, 60px) scale(1.08); }
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  50% {
+    transform: translate(-50px, 60px) scale(1.08);
+  }
 }
+
 @keyframes float3 {
-  0%, 100% { transform: translate(0px, 0px) scale(1); }
-  50% { transform: translate(40px, -55px) scale(1.06); }
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  50% {
+    transform: translate(40px, -55px) scale(1.06);
+  }
 }

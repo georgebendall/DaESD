@@ -53,12 +53,25 @@ class CustomerProfile(models.Model):
     Extra information only customers need.
     """
 
+    class AccountType(models.TextChoices):
+        INDIVIDUAL = "individual", "Individual"
+        COMMUNITY_GROUP = "community_group", "Community Group"
+        RESTAURANT = "restaurant", "Restaurant"
+
     user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
         related_name="customer_profile",
     )
+    account_type = models.CharField(
+        max_length=30,
+        choices=AccountType.choices,
+        default=AccountType.INDIVIDUAL,
+    )
+    organisation_name = models.CharField(max_length=160, blank=True)
+    institutional_email = models.EmailField(blank=True)
     phone = models.CharField(max_length=30, blank=True)
+    address_line1 = models.CharField(max_length=120, blank=True)
     postcode = models.CharField(max_length=12, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -67,6 +80,8 @@ class CustomerProfile(models.Model):
             raise ValidationError(
                 "CustomerProfile can only be linked to users with role='customer'."
             )
+        if self.account_type != self.AccountType.INDIVIDUAL and not self.organisation_name:
+            raise ValidationError("Organisation name is required for community group and restaurant accounts.")
 
     def __str__(self) -> str:
         return f"CustomerProfile for {self.user.username}"

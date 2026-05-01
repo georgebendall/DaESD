@@ -86,7 +86,11 @@ def customer_dashboard(request):
     try:
         from orders.models import Cart, CartItem
         cart = Cart.objects.filter(customer=request.user).first()
-        cart_items = CartItem.objects.filter(cart=cart).count() if cart else 0
+        cart_items = (
+            sum(item.quantity for item in CartItem.objects.filter(cart=cart))
+            if cart
+            else 0
+        )
     except Exception:
         cart_items = 0
 
@@ -141,7 +145,15 @@ def producer_stock(request):
         .select_related("category")
         .order_by("name")
     )
-    return render(request, "dashboards/stock.html", {"products": products})
+    return render(
+        request,
+        "dashboards/stock.html",
+        {
+            "products": products,
+            "products_count": products.count(),
+            "low_stock_count": len([p for p in products if p.is_low_stock]),
+        },
+    )
 
 
 @login_required

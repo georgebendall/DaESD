@@ -1,9 +1,11 @@
 from math import asin, cos, radians, sin, sqrt
+from decimal import Decimal
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.utils import timezone
 from django.utils.text import slugify
 
 from accounts.models import User
@@ -52,6 +54,7 @@ class Product(models.Model):
 
     class Unit(models.TextChoices):
         EACH = "each", "Each"
+        HEAD = "head", "Head"
         KG = "kg", "Kilogram"
         G = "g", "Gram"
         L = "l", "Litre"
@@ -119,6 +122,18 @@ class Product(models.Model):
         help_text="Tick if this product is organically certified.",
     )
 
+    is_surplus = models.BooleanField(
+        default=False,
+        help_text="Mark this product as a last-minute surplus deal.",
+    )
+    surplus_discount_percent = models.PositiveIntegerField(
+        default=0,
+        help_text="Discount percentage for surplus deals.",
+    )
+    surplus_expires_at = models.DateTimeField(blank=True, null=True)
+    surplus_note = models.CharField(max_length=255, blank=True)
+    best_before_date = models.DateField(blank=True, null=True)
+
     is_active = models.BooleanField(
         default=True,
         help_text="If false, the product is hidden from customers.",
@@ -142,6 +157,16 @@ class Product(models.Model):
         if self.stock is not None and self.stock < 0:
             raise ValidationError("Stock cannot be negative.")
 
+        if self.is_surplus:
+            if self.surplus_discount_percent < 10 or self.surplus_discount_percent > 50:
+                raise ValidationError("Surplus discount must be between 10% and 50%.")
+            if not self.surplus_expires_at:
+                raise ValidationError("Surplus deals must include an expiry date.")
+        elif self.surplus_discount_percent or self.surplus_expires_at or self.surplus_note:
+            self.surplus_discount_percent = 0
+            self.surplus_expires_at = None
+            self.surplus_note = ""
+
     @property
     def is_low_stock(self) -> bool:
         return self.stock <= self.stock_warning_level
@@ -152,6 +177,33 @@ class Product(models.Model):
             self.AvailabilityStatus.YEAR_ROUND,
         }
         self.is_active = self.stock > 0 and self.availability_status in visible_statuses
+
+    @property
+    def surplus_is_active(self) -> bool:
+        if not self.is_surplus:
+            return False
+        if self.surplus_expires_at and self.surplus_expires_at <= timezone.now():
+            return False
+        return True
+
+    @property
+    def effective_price(self) -> Decimal:
+        if not self.surplus_is_active or not self.surplus_discount_percent:
+            return self.price
+        multiplier = Decimal(100 - self.surplus_discount_percent) / Decimal(100)
+        return (self.price * multiplier).quantize(Decimal("0.01"))
+
+    @property
+    def unit_label(self) -> str:
+        unit_map = {
+            self.Unit.EACH: "each",
+            self.Unit.HEAD: "head",
+            self.Unit.KG: "kg",
+            self.Unit.G: "g",
+            self.Unit.L: "litre",
+            self.Unit.ML: "ml",
+        }
+        return unit_map.get(self.unit, self.get_unit_display().lower())
 
     def food_miles_for_customer(self, customer):
         try:
@@ -208,9 +260,16 @@ POSTCODE_COORDS = {
     "BS1 4DJ": (51.4528, -2.5900),
     "BS2": (51.4590, -2.5800),
     "BS3": (51.4400, -2.6100),
+    "BS6": (51.4720, -2.6050),
     "BS4": (51.4300, -2.5600),
     "BS8": (51.4580, -2.6200),
+    "BS16": (51.4860, -2.5100),
     "BS40": (51.3500, -2.7000),
+    "BA1": (51.3811, -2.3590),
+    "BA2": (51.3750, -2.3810),
+    "BA3": (51.2740, -2.4760),
+    "BA4": (51.2050, -2.6460),
+    "BA5": (51.2090, -2.6470),
     "GL14 2QA": (51.7900, -2.5400),
     "L4 4EL": (53.4550, -2.9600),
 }

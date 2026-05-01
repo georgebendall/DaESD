@@ -3,8 +3,9 @@ from io import StringIO
 from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
-from accounts.models import User
+from accounts.models import ProducerProfile, User
 from .models import Allergen, Category, Product
 
 
@@ -22,6 +23,12 @@ class MarketplaceSeedAndCatalogueTests(TestCase):
         self.assertTrue(User.objects.filter(username="admin1", is_staff=True).exists())
         self.assertTrue(User.objects.filter(username="producer1", producer_profile__business_name="Bristol Valley Farm").exists())
         self.assertTrue(User.objects.filter(username="producer2", producer_profile__business_name="Hillside Dairy").exists())
+        self.assertTrue(User.objects.filter(username="st_marys_school", customer_profile__account_type="community_group").exists())
+        self.assertTrue(User.objects.filter(username="the_clifton_kitchen", customer_profile__account_type="restaurant").exists())
+        self.assertTrue(Product.objects.filter(name="Bulk Potatoes", unit=Product.Unit.KG, stock__gte=100).exists())
+        self.assertTrue(Product.objects.filter(name="Fresh Milk", unit=Product.Unit.L, stock__gte=100).exists())
+        self.assertTrue(Product.objects.filter(name="Bulk Carrots", unit=Product.Unit.KG, stock__gte=100).exists())
+        self.assertTrue(Product.objects.filter(name="Lettuce", unit=Product.Unit.HEAD, is_surplus=True).exists())
         self.assertGreaterEqual(Product.objects.filter(category__name="Vegetables").count(), 5)
         self.assertGreaterEqual(Product.objects.filter(category__name="Dairy & Eggs").count(), 3)
         self.assertGreaterEqual(Product.objects.filter(is_organic=True).count(), 5)
@@ -100,3 +107,34 @@ class MarketplaceSeedAndCatalogueTests(TestCase):
         self.client.force_login(producer)
         dashboard_response = self.client.get(reverse("producer_stock"))
         self.assertContains(dashboard_response, "Mature Cheddar")
+
+    def test_surplus_deals_are_visible_with_discounted_price(self):
+        producer = User.objects.create_user(
+            username="surplusproducer",
+            email="surplus@example.com",
+            password="StrongPass123!",
+            role=User.Role.PRODUCER,
+        )
+        ProducerProfile.objects.create(
+            user=producer,
+            business_name="Surplus Farm",
+            postcode="BS1 4DJ",
+        )
+        category = Category.objects.get(name="Vegetables")
+        surplus_product = Product.objects.create(
+            producer=producer,
+            category=category,
+            name="Lettuce",
+            price=5,
+            stock=50,
+            is_surplus=True,
+            surplus_discount_percent=30,
+            surplus_expires_at=timezone.now() + timezone.timedelta(days=2),
+            surplus_note="Perfect condition, must sell quickly to avoid waste",
+        )
+
+        response = self.client.get(reverse("surplus_deals"))
+        self.assertContains(response, "Lettuce")
+        self.assertContains(response, "3.50")
+        self.assertContains(response, "30")
+        self.assertIn(surplus_product, response.context["products"])

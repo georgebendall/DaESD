@@ -3,118 +3,73 @@
 {% block title %}Welcome | BRFN{% endblock %}
 
 {% block content %}
-
-<!-- HERO -->
-<div class="mt-5 mb-5">
-  <div class="glass p-5 text-center">
-
-    <h1 class="display-3 fw-bold text-white mb-3">
-      BRFN Marketplace
-    </h1>
-
-    <p class="lead text-soft mb-4">
-      Connect with local producers and simplify your restaurant supply chain.
-    </p>
-
-    <div class="d-flex justify-content-center gap-3 flex-wrap">
-      <a href="/shop/products/" class="btn btn-light btn-lg btn-round px-4">
-        Explore Products
-      </a>
-      <a href="/accounts/register/" class="btn btn-outline-light btn-lg btn-round px-4">
-        Get Started
-      </a>
-    </div>
-
-  </div>
-</div>
-
-<!-- IMAGE SHOWCASE -->
-<div class="mt-5 mb-5">
-  <div class="row g-4">
-
-    <div class="col-md-4">
-      <div class="product-card glass overflow-hidden">
-        <img src="https://images.unsplash.com/photo-1542838132-92c53300491e"
-             class="img-fluid"
-             alt="Fresh Produce">
-        <div class="p-3">
-          <h6 class="text-white mb-1">Fresh Produce</h6>
-          <p class="text-soft small mb-0">Locally sourced vegetables and fruits</p>
+<div class="page-shell">
+  <section class="hero-slab mb-4">
+    <div class="row g-4 align-items-center">
+      <div class="col-lg-7">
+        <span class="eyebrow">Bristol Regional Food Network</span>
+        <h1 class="page-title mt-3">A cleaner way to browse local food and place repeat orders.</h1>
+        <p class="page-subtitle">
+          BRFN brings producers and customers together with a simpler store, clearer product details, visible food miles, and an easier cart and checkout flow.
+        </p>
+        <div class="d-flex gap-3 flex-wrap mt-4">
+          <a href="/shop/products/" class="btn btn-primary btn-lg">Browse Products</a>
+          {% if request.user.is_authenticated %}
+            <a href="{% url 'cart_page' %}" class="btn btn-outline-secondary btn-lg">Open Cart</a>
+          {% else %}
+            <a href="/accounts/register/" class="btn btn-outline-secondary btn-lg">Create Account</a>
+          {% endif %}
+        </div>
+      </div>
+      <div class="col-lg-5">
+        <div class="section-card hero-note">
+          <div class="feature-list">
+            <div class="feature-row">
+              <span class="feature-icon">1</span>
+              <div>
+                <strong>Browse faster</strong>
+                <div class="small text-soft">Use simple filters for category, allergens, availability, and surplus deals.</div>
+              </div>
+            </div>
+            <div class="feature-row">
+              <span class="feature-icon">2</span>
+              <div>
+                <strong>See the right details</strong>
+                <div class="small text-soft">Compare producers, price, organic status, and food miles right on the product cards.</div>
+              </div>
+            </div>
+            <div class="feature-row">
+              <span class="feature-icon">3</span>
+              <div>
+                <strong>Order with confidence</strong>
+                <div class="small text-soft">Keep your cart visible and move from store to checkout without confusion.</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
+  </section>
 
+  <section class="row g-4 mb-4">
     <div class="col-md-4">
-      <div class="product-card glass overflow-hidden">
-        <img src="https://images.unsplash.com/photo-1509440159596-0249088772ff"
-             class="img-fluid"
-              alt="Bakery">
-        <div class="p-3">
-          <h6 class="text-white mb-1">Bakery Goods</h6>
-          <p class="text-soft small mb-0">Fresh bread and artisan pastries</p>
-        </div>
+      <div class="section-card info-card h-100">
+        <h3>Fresh produce</h3>
+        <p>Explore vegetables, dairy, bakery, and more in a layout that is easier to scan and compare.</p>
       </div>
     </div>
-
     <div class="col-md-4">
-      <div class="product-card glass overflow-hidden">
-        <img src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b"
-             class="img-fluid"
-             alt="Dairy">
-        <div class="p-3">
-          <h6 class="text-white mb-1">Dairy & Essentials</h6>
-          <p class="text-soft small mb-0">Milk, cheese and daily essentials</p>
-        </div>
+      <div class="section-card info-card h-100">
+        <h3>Reliable ordering</h3>
+        <p>Use the cart, order history, and recurring orders to keep weekly purchasing simple and consistent.</p>
       </div>
     </div>
-
-  </div>
+    <div class="col-md-4">
+      <div class="section-card info-card h-100">
+        <h3>Local impact</h3>
+        <p>Check food miles, supplier details, and availability before you commit to an order.</p>
+      </div>
+    </div>
+  </section>
 </div>
-
-<!-- FEATURES -->
-<div class="mt-5 mb-5">
-  <div class="row g-4">
-
-    <div class="col-md-4">
-      <div class="glass p-4 text-center">
-        <h5 class="text-white">🛒 Marketplace</h5>
-        <p class="text-soft">Browse a wide range of products.</p>
-      </div>
-    </div>
-
-    <div class="col-md-4">
-      <div class="glass p-4 text-center">
-        <h5 class="text-white">📦 Orders</h5>
-        <p class="text-soft">Track and manage your purchases.</p>
-      </div>
-    </div>
-
-    <div class="col-md-4">
-      <div class="glass p-4 text-center">
-        <h5 class="text-white">💳 Payments</h5>
-        <p class="text-soft">Secure and smooth checkout system.</p>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-<!-- CTA -->
-<div class="mt-5 mb-5">
-  <div class="glass p-5 text-center">
-
-    <h3 class="text-white mb-3">Start your journey with BRFN</h3>
-
-    <div class="d-flex justify-content-center gap-3 flex-wrap">
-      <a href="/accounts/login/" class="btn btn-light btn-round">
-        Login
-      </a>
-      <a href="/accounts/register/" class="btn btn-outline-light btn-round">
-        Create Account
-      </a>
-    </div>
-
-  </div>
-</div>
-
 {% endblock %}

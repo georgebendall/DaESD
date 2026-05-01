@@ -54,6 +54,7 @@ class Command(BaseCommand):
                 "last_name": "Morgan",
                 "phone": "07111 111101",
                 "postcode": "BS3 2AA",
+                "account_type": CustomerProfile.AccountType.INDIVIDUAL,
             },
             {
                 "username": "customer2",
@@ -62,6 +63,31 @@ class Command(BaseCommand):
                 "last_name": "Rees",
                 "phone": "07111 111102",
                 "postcode": "BS6 5QA",
+                "account_type": CustomerProfile.AccountType.INDIVIDUAL,
+            },
+            {
+                "username": "st_marys_school",
+                "email": "catering@stmarys-school.org.uk",
+                "first_name": "St. Mary's",
+                "last_name": "School",
+                "phone": "07111 111103",
+                "postcode": "BS3 4AB",
+                "address_line1": "School Lane, Bristol",
+                "organisation_name": "St. Mary's School",
+                "institutional_email": "catering@stmarys-school.org.uk",
+                "account_type": CustomerProfile.AccountType.COMMUNITY_GROUP,
+            },
+            {
+                "username": "the_clifton_kitchen",
+                "email": "orders@cliftonkitchen.co.uk",
+                "first_name": "The Clifton",
+                "last_name": "Kitchen",
+                "phone": "07111 111104",
+                "postcode": "BS8 2EF",
+                "address_line1": "44 Clifton Road, Bristol",
+                "organisation_name": "The Clifton Kitchen",
+                "institutional_email": "orders@cliftonkitchen.co.uk",
+                "account_type": CustomerProfile.AccountType.RESTAURANT,
             },
         ]
         customer_usernames = [c["username"] for c in customer_specs]
@@ -79,10 +105,22 @@ class Command(BaseCommand):
                 "postcode": "BS1 4AB",
                 "products": [
                     {
+                        "name": "Bulk Potatoes",
+                        "category": "Vegetables",
+                        "price": Decimal("1.10"),
+                        "stock": Decimal("150"),
+                        "unit": Product.Unit.KG,
+                        "description": "Bulk potatoes packed for school kitchens and catering orders.",
+                        "is_organic": False,
+                        "availability": Product.AvailabilityStatus.YEAR_ROUND,
+                        "allergens": [],
+                    },
+                    {
                         "name": "Organic Carrots",
                         "category": "Vegetables",
                         "price": Decimal("1.50"),
-                        "stock": Decimal("25"),
+                        "stock": Decimal("140"),
+                        "unit": Product.Unit.KG,
                         "description": "Certified organic carrots grown in rich Bristol Valley soil.",
                         "is_organic": True,
                         "availability": Product.AvailabilityStatus.IN_SEASON,
@@ -165,7 +203,8 @@ class Command(BaseCommand):
                         "name": "Fresh Milk",
                         "category": "Dairy & Eggs",
                         "price": Decimal("1.80"),
-                        "stock": Decimal("30"),
+                        "stock": Decimal("160"),
+                        "unit": Product.Unit.L,
                         "description": "Fresh whole milk from Hillside Dairy.",
                         "is_organic": False,
                         "availability": Product.AvailabilityStatus.YEAR_ROUND,
@@ -258,44 +297,52 @@ class Command(BaseCommand):
             },
             {
                 "username": "producer4",
-                "email": "avonorchards@example.com",
+                "email": "cliftonmarketgarden@example.com",
                 "contact_first": "Maya",
                 "contact_last": "Evans",
-                "business_name": "Avon Orchard Co.",
+                "business_name": "Clifton Market Garden",
                 "phone": "07000 100004",
                 "address": "5 Orchard Way",
                 "city": "Bristol",
                 "postcode": "BS1 6GH",
                 "products": [
                     {
-                        "name": "Organic Apple Juice",
-                        "category": "Drinks",
-                        "price": Decimal("1.99"),
-                        "stock": Decimal("30"),
-                        "description": "Certified organic apple juice pressed in Bristol.",
+                        "name": "Bulk Carrots",
+                        "category": "Vegetables",
+                        "price": Decimal("1.35"),
+                        "stock": Decimal("130"),
+                        "unit": Product.Unit.KG,
+                        "description": "Bulk carrots prepared for catering and school meal service.",
                         "is_organic": True,
                         "availability": Product.AvailabilityStatus.YEAR_ROUND,
                         "allergens": [],
                     },
                     {
-                        "name": "Pear Juice",
-                        "category": "Drinks",
-                        "price": Decimal("2.10"),
-                        "stock": Decimal("22"),
-                        "description": "Clear pear juice from Avon orchards.",
-                        "is_organic": False,
-                        "availability": Product.AvailabilityStatus.YEAR_ROUND,
-                        "allergens": [],
-                    },
-                    {
-                        "name": "Nutty Granola",
-                        "category": "Bakery",
-                        "price": Decimal("2.60"),
-                        "stock": Decimal("12"),
-                        "description": "Crunchy oat granola with mixed nuts.",
+                        "name": "Lettuce",
+                        "category": "Vegetables",
+                        "price": Decimal("1.40"),
+                        "stock": Decimal("80"),
+                        "unit": Product.Unit.HEAD,
+                        "description": "Crisp lettuce heads packed fresh for quick-turnaround orders.",
                         "is_organic": False,
                         "availability": Product.AvailabilityStatus.IN_SEASON,
-                        "allergens": ["Nuts", "Gluten"],
+                        "allergens": [],
+                        "is_surplus": True,
+                        "surplus_discount_percent": 30,
+                        "surplus_expires_at": timezone.now() + timedelta(days=2),
+                        "surplus_note": "Perfect condition, must sell quickly",
+                        "best_before_date": timezone.localdate() + timedelta(days=4),
+                    },
+                    {
+                        "name": "Little Gem Lettuce",
+                        "category": "Vegetables",
+                        "price": Decimal("1.10"),
+                        "stock": Decimal("60"),
+                        "unit": Product.Unit.HEAD,
+                        "description": "Small lettuce heads for local kitchens.",
+                        "is_organic": False,
+                        "availability": Product.AvailabilityStatus.IN_SEASON,
+                        "allergens": [],
                     },
                 ],
             },
@@ -459,6 +506,10 @@ class Command(BaseCommand):
                 defaults={
                     "phone": spec["phone"],
                     "postcode": spec["postcode"],
+                    "address_line1": spec.get("address_line1", ""),
+                    "organisation_name": spec.get("organisation_name", ""),
+                    "institutional_email": spec.get("institutional_email", ""),
+                    "account_type": spec.get("account_type", CustomerProfile.AccountType.INDIVIDUAL),
                 },
             )
             customers.append(u)
@@ -497,6 +548,11 @@ class Command(BaseCommand):
                         "unit": item.get("unit", Product.Unit.EACH),
                         "is_organic": item["is_organic"],
                         "availability_status": item["availability"],
+                        "is_surplus": item.get("is_surplus", False),
+                        "surplus_discount_percent": item.get("surplus_discount_percent", 0),
+                        "surplus_expires_at": item.get("surplus_expires_at"),
+                        "surplus_note": item.get("surplus_note", ""),
+                        "best_before_date": item.get("best_before_date"),
                     },
                 )
 
@@ -508,6 +564,11 @@ class Command(BaseCommand):
                 prod.unit = item.get("unit", Product.Unit.EACH)
                 prod.is_organic = item["is_organic"]
                 prod.availability_status = item["availability"]
+                prod.is_surplus = item.get("is_surplus", False)
+                prod.surplus_discount_percent = item.get("surplus_discount_percent", 0)
+                prod.surplus_expires_at = item.get("surplus_expires_at")
+                prod.surplus_note = item.get("surplus_note", "")
+                prod.best_before_date = item.get("best_before_date")
                 prod.save()
 
                 prod.allergens.clear()

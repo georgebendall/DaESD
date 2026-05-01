@@ -43,6 +43,12 @@
     </div>
 
     <div class="col-md-4">
+      <label class="form-label text-white">Unit</label>
+      {{ form.unit }}
+      {% if form.unit.errors %}<div class="text-warning small mt-1">{{ form.unit.errors }}</div>{% endif %}
+    </div>
+
+    <div class="col-md-4">
       <label class="form-label text-white">Price</label>
       {{ form.price }}
       {% if form.price.errors %}<div class="text-warning small mt-1">{{ form.price.errors }}</div>{% endif %}
@@ -70,6 +76,38 @@
       <label class="form-label text-white">Allergens</label>
       {{ form.allergens }}
       {% if form.allergens.errors %}<div class="text-warning small mt-1">{{ form.allergens.errors }}</div>{% endif %}
+    </div>
+
+    <div class="col-12">
+      <div class="form-check">
+        {{ form.is_surplus }}
+        <label class="form-check-label text-white" for="{{ form.is_surplus.id_for_label }}">Mark as surplus / last-minute deal</label>
+      </div>
+      {% if form.is_surplus.errors %}<div class="text-warning small mt-1">{{ form.is_surplus.errors }}</div>{% endif %}
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label text-white">Discount %</label>
+      {{ form.surplus_discount_percent }}
+      {% if form.surplus_discount_percent.errors %}<div class="text-warning small mt-1">{{ form.surplus_discount_percent.errors }}</div>{% endif %}
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label text-white">Deal Expires At</label>
+      {{ form.surplus_expires_at }}
+      {% if form.surplus_expires_at.errors %}<div class="text-warning small mt-1">{{ form.surplus_expires_at.errors }}</div>{% endif %}
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label text-white">Surplus Note</label>
+      {{ form.surplus_note }}
+      {% if form.surplus_note.errors %}<div class="text-warning small mt-1">{{ form.surplus_note.errors }}</div>{% endif %}
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label text-white">Best Before Date</label>
+      {{ form.best_before_date }}
+      {% if form.best_before_date.errors %}<div class="text-warning small mt-1">{{ form.best_before_date.errors }}</div>{% endif %}
     </div>
 
     <div class="col-12 d-flex justify-content-end gap-2 mt-3">
