@@ -79,6 +79,17 @@
           {% endif %}
         </div>
       </div>
+      <h3>Reviews</h3>
+
+{% for review in product.reviews.all %}
+    <div>
+        <strong>{{ review.rating }} ⭐</strong>
+        <p>{{ review.title }}</p>
+        <p>{{ review.text }}</p>
+    </div>
+{% empty %}
+    <p>No reviews yet</p>
+{% endfor %}
     </section>
 
     <aside class="product-detail-side">
