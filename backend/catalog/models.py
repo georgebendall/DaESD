@@ -95,7 +95,13 @@ class Product(models.Model):
         validators=[MinValueValidator(0)],
         help_text="How much stock is available right now.",
     )
+    low_stock_threshold = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=5,
+        help_text="Low stock alert threshold for this product.",
 
+    )
     availability_status = models.CharField(
         max_length=30,
         choices=AvailabilityStatus.choices,
@@ -311,3 +317,19 @@ def calculate_food_miles(customer_postcode, producer_postcode):
 
     distance = 2 * radius_miles * asin(sqrt(a))
     return round(distance, 1)
+def reduce_stock(self, quantity: int):
+    if quantity <= 0:
+        raise ValueError("Quantity must be positive")
+
+    self.stock -= quantity
+    if self.stock < 0:
+        self.stock = 0
+
+    self.save()
+
+    if self.stock < self.low_stock_threshold:
+        from dashboards.models import Notification
+
+        Notification.objects.create(
+            message=f"Low Stock Alert: {self.name} ({self.stock} left)"
+        )
