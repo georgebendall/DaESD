@@ -2,105 +2,122 @@
 {% block title %}Receipt | Order {{ order.id }}{% endblock %}
 
 {% block content %}
-<div class="glass p-4 mt-4">
-  <div class="d-flex justify-content-between align-items-start mb-3">
-    <div>
-      <h2 class="text-white mb-1">Receipt — Order #{{ order.id }}</h2>
-      <div class="text-soft">Date: {{ order.created_at|date:"Y-m-d H:i" }}</div>
-      <div class="text-soft">Customer: {{ order.customer.username }}</div>
-      <div class="text-soft">Delivery date: {{ order.delivery_date|default:"Not set" }}</div>
+<div class="page-shell">
+  <div class="invoice-shell">
+    <div class="invoice-header">
+      <div>
+        <a class="btn btn-back mb-3" href="{% url 'order_history' %}">← Back to Orders</a>
+        <h1 class="page-title" style="font-size: clamp(2rem, 4vw, 2.7rem);">Receipt — Order #{{ order.id }}</h1>
+        <p class="page-subtitle">Receipt view with item breakdown, delivery details, and payment record.</p>
+        <div class="text-soft small mt-2">Date: {{ order.created_at|date:"Y-m-d H:i" }} · Customer: {{ order.customer.username }} · Delivery date: {{ order.delivery_date|default:"Not set" }}</div>
+      </div>
+      <div class="page-actions">
+        <a class="btn btn-outline-secondary" href="{% url 'order_detail' order.id %}">Back to order</a>
+      </div>
     </div>
-    <div class="text-end">
-      <a class="btn btn-outline-light" href="{% url 'order_detail' order.id %}">Back to order</a>
-    </div>
-  </div>
 
-  {% for section in producer_sections %}
-    <div class="surface-tile p-3 mb-4">
-      <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
-        <div>
-          <h5 class="text-white mb-1">{{ section.producer_name }}</h5>
-          <div class="text-soft small">
-            {% if section.contact_phone %}{{ section.contact_phone }}{% endif %}
-            {% if section.postcode %} · {{ section.postcode }}{% endif %}
+    {% for section in producer_sections %}
+      <section class="invoice-section">
+        <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
+          <div>
+            <h2 class="section-title">{{ section.producer_name }}</h2>
+            <div class="text-soft small">
+              {% if section.contact_phone %}{{ section.contact_phone }}{% endif %}
+              {% if section.postcode %} · {{ section.postcode }}{% endif %}
+            </div>
+          </div>
+          <div class="text-end">
+            <div class="detail-label">Producer subtotal</div>
+            <div class="fw-semibold">£{{ section.subtotal|floatformat:2 }}</div>
           </div>
         </div>
-        <div class="text-end">
-          <div class="text-soft small">Producer subtotal</div>
-          <strong class="text-white">£{{ section.subtotal|floatformat:2 }}</strong>
+
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Qty</th>
+                <th>Unit</th>
+                <th>Unit Price</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in section.items %}
+                <tr>
+                  <td>{{ item.product.name }}</td>
+                  <td>{{ item.quantity_display }}</td>
+                  <td>{{ item.unit_label }}</td>
+                  <td>£{{ item.unit_price|floatformat:2 }}</td>
+                  <td class="fw-semibold">£{{ item.line_total|floatformat:2 }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    {% endfor %}
+
+    <section class="invoice-section">
+      <div class="invoice-grid">
+        <div class="invoice-meta-card">
+          <span class="label">Delivery address</span>
+          <div>{{ order.delivery_address|linebreaksbr|default:"Not provided" }}</div>
+        </div>
+        <div class="invoice-meta-card">
+          <span class="label">Special instructions</span>
+          <div>{{ order.special_instructions|default:"None" }}</div>
         </div>
       </div>
+    </section>
 
-      <div class="table-responsive">
-        <table class="table table-dark align-middle mb-0">
-          <thead>
-            <tr>
-              <th>Product</th>
-              <th>Qty</th>
-              <th>Unit</th>
-              <th>Unit Price</th>
-              <th>Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for item in section.items %}
+    <section class="invoice-section">
+      <div class="invoice-totals">
+        <div class="invoice-meta-card">
+          <span class="label">Subtotal</span>
+          <strong>£{{ order.subtotal|floatformat:2 }}</strong>
+        </div>
+        <div class="invoice-meta-card">
+          <span class="label">Commission</span>
+          <strong>£{{ order.commission_total|floatformat:2 }}</strong>
+        </div>
+        <div class="invoice-meta-card">
+          <span class="label">Total</span>
+          <strong>£{{ order.total|floatformat:2 }}</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="invoice-section">
+      <h2 class="section-title mb-3">Payment transactions</h2>
+      {% if txns %}
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead>
               <tr>
-                <td class="text-white">{{ item.product.name }}</td>
-                <td class="text-white">{{ item.quantity_display }}</td>
-                <td class="text-white">{{ item.unit_label }}</td>
-                <td class="text-white">£{{ item.unit_price|floatformat:2 }}</td>
-                <td class="text-white">£{{ item.line_total|floatformat:2 }}</td>
+                <th>Provider</th>
+                <th>Status</th>
+                <th>Amount</th>
+                <th>Reference</th>
               </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  {% endfor %}
-
-  <div class="surface-tile p-3 mb-4">
-    <div class="text-soft mb-1">Delivery address</div>
-    <div class="text-white">{{ order.delivery_address|linebreaksbr|default:"Not provided" }}</div>
-    <div class="text-soft mt-3 mb-1">Special instructions</div>
-    <div class="text-white">{{ order.special_instructions|default:"None" }}</div>
-  </div>
-
-  <div class="row g-3 mb-4">
-    <div class="col-md-4">
-      <div class="surface-tile p-3">
-        <div class="text-soft mb-1">Subtotal</div>
-        <div class="h5 mb-0 text-white">£{{ order.subtotal|floatformat:2 }}</div>
-      </div>
-    </div>
-    <div class="col-md-4">
-      <div class="surface-tile p-3">
-        <div class="text-soft mb-1">Commission</div>
-        <div class="h5 mb-0 text-warning">£{{ order.commission_total|floatformat:2 }}</div>
-      </div>
-    </div>
-    <div class="col-md-4">
-      <div class="surface-tile p-3">
-        <div class="text-soft mb-1">Total</div>
-        <div class="h4 mb-0 text-danger">£{{ order.total|floatformat:2 }}</div>
-      </div>
-    </div>
-  </div>
-
-  <h5 class="text-white mb-2">Payment Transactions</h5>
-  {% if txns %}
-    <ul class="text-soft">
-      {% for t in txns %}
-        <li>
-          {{ t.provider }} — {{ t.status }} — £{{ t.amount }} {{ t.currency }} — ref {{ t.masked_reference }}
-        </li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <div class="text-soft">No payment transactions found.</div>
-  {% endif %}
-
-  <div class="text-soft mt-3">
-    Tip: You can print this page and “Save as PDF”.
+            </thead>
+            <tbody>
+              {% for t in txns %}
+                <tr>
+                  <td>{{ t.provider|title }}</td>
+                  <td>{{ t.status|title }}</td>
+                  <td>£{{ t.amount|floatformat:2 }} {{ t.currency }}</td>
+                  <td>{{ t.masked_reference }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="alert alert-info mb-0">No payment transactions found.</div>
+      {% endif %}
+    </section>
   </div>
 </div>
 {% endblock %}

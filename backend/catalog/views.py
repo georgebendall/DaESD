@@ -3,7 +3,34 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 
-from .models import Allergen, Category, Product
+from .models import Allergen, Category, Product, calculate_food_miles
+
+
+MAX_FOOD_MILES_OPTIONS = [
+    ("", "Any distance"),
+    ("5", "Within 5 miles"),
+    ("10", "Within 10 miles"),
+    ("25", "Within 25 miles"),
+    ("50", "Within 50 miles"),
+]
+
+SORT_OPTIONS = [
+    ("", "Name A-Z"),
+    ("nearest", "Nearest first"),
+]
+
+
+def _saved_customer_postcode(request):
+    if not request.user.is_authenticated or getattr(request.user, "role", "") != "customer":
+        return ""
+    return getattr(getattr(request.user, "customer_profile", None), "postcode", "").strip()
+
+
+def _product_food_miles(product, postcode):
+    producer_postcode = getattr(getattr(product.producer, "producer_profile", None), "postcode", "")
+    if not postcode or not producer_postcode:
+        return None
+    return calculate_food_miles(postcode, producer_postcode)
 
 
 def product_list(request):
@@ -26,11 +53,20 @@ def product_list_page(request):
     availability = (request.GET.get("availability") or "").strip()
     organic_only = (request.GET.get("organic") or "").strip()
     surplus_only = (request.GET.get("surplus") or "").strip()
+    max_food_miles = (request.GET.get("max_food_miles") or "").strip()
+    sort_by = (request.GET.get("sort") or "").strip()
+    entered_postcode = (request.GET.get("postcode") or "").strip()
     customer_postcode_missing = False
+    food_miles_notice = ""
+    unresolved_food_miles_count = 0
+
+    saved_postcode = _saved_customer_postcode(request)
+    filter_postcode = saved_postcode or entered_postcode
+    show_postcode_filter = not bool(saved_postcode)
 
     qs = (
         Product.objects.filter(is_active=True)
-        .select_related("category", "producer")
+        .select_related("category", "producer", "producer__producer_profile")
         .prefetch_related("allergens")
     )
 
@@ -66,19 +102,57 @@ def product_list_page(request):
             surplus_expires_at__gt=timezone.now(),
         )
 
-    qs = qs.distinct().order_by("name")
+    products = list(qs.distinct())
 
-    paginator = Paginator(qs, 12)
-    page_obj = paginator.get_page(request.GET.get("page") or 1)
+    should_compute_food_miles = bool(filter_postcode) or (
+        request.user.is_authenticated and getattr(request.user, "role", "") == "customer"
+    )
 
     if request.user.is_authenticated and getattr(request.user, "role", "") == "customer":
-        customer_postcode_missing = not getattr(
-            getattr(request.user, "customer_profile", None),
-            "postcode",
-            "",
-        ).strip()
-        for product in page_obj.object_list:
-            product.food_miles = product.food_miles_for_customer(request.user)
+        customer_postcode_missing = not saved_postcode
+
+    if should_compute_food_miles:
+        for product in products:
+            if saved_postcode and request.user.is_authenticated and getattr(request.user, "role", "") == "customer":
+                product.food_miles = product.food_miles_for_customer(request.user)
+            else:
+                product.food_miles = _product_food_miles(product, filter_postcode)
+    else:
+        for product in products:
+            product.food_miles = None
+
+    max_food_miles_value = int(max_food_miles) if max_food_miles.isdigit() else None
+    requested_food_miles_filter = bool(max_food_miles_value) or sort_by == "nearest"
+
+    if requested_food_miles_filter and not filter_postcode:
+        food_miles_notice = "Enter your postcode to filter or sort by food miles."
+    else:
+        if max_food_miles_value:
+            filtered_products = []
+            for product in products:
+                if product.food_miles is None:
+                    unresolved_food_miles_count += 1
+                    continue
+                if product.food_miles <= max_food_miles_value:
+                    filtered_products.append(product)
+            products = filtered_products
+
+            if unresolved_food_miles_count:
+                food_miles_notice = "Some products were hidden because food miles were unavailable."
+
+        if sort_by == "nearest":
+            products.sort(
+                key=lambda product: (
+                    product.food_miles is None,
+                    product.food_miles if product.food_miles is not None else float("inf"),
+                    product.name.lower(),
+                )
+            )
+        else:
+            products.sort(key=lambda product: product.name.lower())
+
+    paginator = Paginator(products, 12)
+    page_obj = paginator.get_page(request.GET.get("page") or 1)
 
     categories = Category.objects.order_by("name")
     allergens = Allergen.objects.order_by("name")
@@ -101,7 +175,15 @@ def product_list_page(request):
             "availability_choices": Product.AvailabilityStatus.choices,
             "organic_only": organic_only,
             "surplus_only": surplus_only,
+            "max_food_miles": max_food_miles,
+            "max_food_miles_options": MAX_FOOD_MILES_OPTIONS,
+            "sort_by": sort_by,
+            "sort_options": SORT_OPTIONS,
+            "filter_postcode": filter_postcode,
+            "entered_postcode": entered_postcode,
+            "show_postcode_filter": show_postcode_filter,
             "customer_postcode_missing": customer_postcode_missing,
+            "food_miles_notice": food_miles_notice,
         },
     )
 

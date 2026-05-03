@@ -5,6 +5,7 @@
 <div class="page-shell">
 <div class="store-header">
   <div>
+    <a class="btn btn-back mb-3" href="/">← Back to Home</a>
     <h1 class="page-title">Products</h1>
     <p class="page-subtitle">Browse local produce, compare suppliers quickly, and add the right items to your cart without extra clutter.</p>
   </div>
@@ -18,6 +19,9 @@
 
 <div class="section-card store-filter-card">
   <form method="GET">
+    {% if surplus_only == '1' %}
+      <input type="hidden" name="surplus" value="1">
+    {% endif %}
     <div class="store-filter-grid">
       <div>
         <label class="form-label">Search</label>
@@ -69,6 +73,31 @@
           {% endfor %}
         </select>
       </div>
+
+      <div>
+        <label class="form-label">Maximum food miles</label>
+        <select class="form-select" name="max_food_miles">
+          {% for value, label in max_food_miles_options %}
+            <option value="{{ value }}" {% if value == max_food_miles %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="form-label">Sort by</label>
+        <select class="form-select" name="sort">
+          {% for value, label in sort_options %}
+            <option value="{{ value }}" {% if value == sort_by %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      {% if show_postcode_filter %}
+        <div>
+          <label class="form-label">Your postcode</label>
+          <input class="form-control" type="text" name="postcode" value="{{ entered_postcode }}" placeholder="e.g. BS1 4ST">
+        </div>
+      {% endif %}
     </div>
 
     <div class="store-filter-actions">
@@ -79,11 +108,17 @@
 
       <div class="d-flex gap-2">
         <button class="btn btn-primary" type="submit">Apply Filters</button>
-        <a class="btn btn-outline-secondary" href="{% url 'product_list' %}">Reset</a>
+        <a class="btn btn-outline-secondary" href="{% if surplus_only == '1' %}{% url 'surplus_deals' %}{% else %}{% url 'product_list' %}{% endif %}">Reset</a>
       </div>
     </div>
   </form>
 </div>
+
+{% if food_miles_notice %}
+  <div class="alert alert-info">
+    {{ food_miles_notice }}
+  </div>
+{% endif %}
 
 {% if customer_postcode_missing %}
   <div class="alert alert-info">
@@ -139,13 +174,13 @@
             </div>
           </div>
 
-          {% if product.food_miles is not None %}
-            <div class="small mb-2">
-              <span class="badge text-bg-info">
-                {{ product.food_miles }} food miles
-              </span>
-            </div>
-          {% endif %}
+          <div class="small text-soft mb-2">
+            {% if product.food_miles is not None %}
+              Food miles: {{ product.food_miles }} miles
+            {% else %}
+              Food miles unavailable
+            {% endif %}
+          </div>
 
           {% if product.surplus_is_active %}
             <div class="alert alert-danger py-2 px-3 small">
@@ -223,7 +258,7 @@
     <ul class="pagination">
       {% if page_obj.has_previous %}
         <li class="page-item">
-          <a class="page-link" href="?q={{ q }}&category={{ category_slug }}&allergen={{ selected_allergen }}&exclude_allergen={{ excluded_allergen }}&availability={{ availability }}&organic={{ organic_only }}&page={{ page_obj.previous_page_number }}">Previous</a>
+          <a class="page-link" href="?q={{ q }}&category={{ category_slug }}&allergen={{ selected_allergen }}&exclude_allergen={{ excluded_allergen }}&availability={{ availability }}&organic={{ organic_only }}&surplus={{ surplus_only }}&max_food_miles={{ max_food_miles }}&sort={{ sort_by }}&postcode={{ entered_postcode }}&page={{ page_obj.previous_page_number }}">Previous</a>
         </li>
       {% else %}
         <li class="page-item disabled"><span class="page-link">Previous</span></li>
@@ -235,7 +270,7 @@
 
       {% if page_obj.has_next %}
         <li class="page-item">
-          <a class="page-link" href="?q={{ q }}&category={{ category_slug }}&allergen={{ selected_allergen }}&exclude_allergen={{ excluded_allergen }}&availability={{ availability }}&organic={{ organic_only }}&page={{ page_obj.next_page_number }}">Next</a>
+          <a class="page-link" href="?q={{ q }}&category={{ category_slug }}&allergen={{ selected_allergen }}&exclude_allergen={{ excluded_allergen }}&availability={{ availability }}&organic={{ organic_only }}&surplus={{ surplus_only }}&max_food_miles={{ max_food_miles }}&sort={{ sort_by }}&postcode={{ entered_postcode }}&page={{ page_obj.next_page_number }}">Next</a>
         </li>
       {% else %}
         <li class="page-item disabled"><span class="page-link">Next</span></li>

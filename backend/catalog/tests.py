@@ -29,6 +29,12 @@ class MarketplaceSeedAndCatalogueTests(TestCase):
         self.assertTrue(Product.objects.filter(name="Fresh Milk", unit=Product.Unit.L, stock__gte=100).exists())
         self.assertTrue(Product.objects.filter(name="Bulk Carrots", unit=Product.Unit.KG, stock__gte=100).exists())
         self.assertTrue(Product.objects.filter(name="Lettuce", unit=Product.Unit.HEAD, is_surplus=True).exists())
+        self.assertTrue(Category.objects.filter(name="Fruit").exists())
+        self.assertTrue(Category.objects.filter(name="Herbs").exists())
+        self.assertTrue(Category.objects.filter(name="Pantry").exists())
+        self.assertTrue(Product.objects.filter(name="Bramley Apples", category__name="Fruit").exists())
+        self.assertTrue(Product.objects.filter(name="Fresh Basil", category__name="Herbs").exists())
+        self.assertTrue(Product.objects.filter(name="Stoneground Oats", category__name="Pantry").exists())
         self.assertGreaterEqual(Product.objects.filter(category__name="Vegetables").count(), 5)
         self.assertGreaterEqual(Product.objects.filter(category__name="Dairy & Eggs").count(), 3)
         self.assertGreaterEqual(Product.objects.filter(is_organic=True).count(), 5)
@@ -138,3 +144,60 @@ class MarketplaceSeedAndCatalogueTests(TestCase):
         self.assertContains(response, "3.50")
         self.assertContains(response, "30")
         self.assertIn(surplus_product, response.context["products"])
+
+    def test_food_miles_filter_shows_only_products_within_selected_distance_for_guest_postcode(self):
+        response = self.client.get(
+            reverse("product_list"),
+            {"postcode": "BS1 4ST", "max_food_miles": "5"},
+        )
+        names = {product.name for product in response.context["products"]}
+
+        self.assertIn("Bulk Potatoes", names)
+        self.assertIn("Bunched Beetroot", names)
+        self.assertNotIn("Fresh Milk", names)
+        self.assertContains(response, "Food miles:")
+
+    def test_food_miles_filter_and_sort_use_saved_customer_postcode(self):
+        customer = User.objects.get(username="customer1")
+        self.client.force_login(customer)
+
+        response = self.client.get(
+            reverse("product_list"),
+            {"max_food_miles": "10", "sort": "nearest"},
+        )
+        products = list(response.context["products"])
+
+        self.assertTrue(products)
+        self.assertLessEqual(products[0].food_miles, products[-1].food_miles)
+        self.assertTrue(all(product.food_miles is not None for product in products))
+        self.assertTrue(all(product.food_miles <= 10 for product in products))
+
+    def test_nearest_first_sorts_products_and_unavailable_distances_last(self):
+        response = self.client.get(
+            reverse("product_list"),
+            {"postcode": "BS1 4ST", "sort": "nearest"},
+        )
+        products = list(response.context["products"])
+
+        self.assertTrue(products)
+        visible_miles = [product.food_miles for product in products if product.food_miles is not None]
+        self.assertEqual(visible_miles, sorted(visible_miles))
+
+    def test_food_miles_filter_requires_postcode_but_does_not_crash(self):
+        response = self.client.get(
+            reverse("product_list"),
+            {"max_food_miles": "25"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Enter your postcode to filter or sort by food miles.")
+
+    def test_food_miles_filter_preserves_existing_category_filter(self):
+        response = self.client.get(
+            reverse("product_list"),
+            {"postcode": "BS1 4ST", "max_food_miles": "25", "category": "vegetables"},
+        )
+        names = {product.name for product in response.context["products"]}
+
+        self.assertIn("Bulk Potatoes", names)
+        self.assertNotIn("Fresh Milk", names)

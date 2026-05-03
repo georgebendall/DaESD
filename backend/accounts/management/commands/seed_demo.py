@@ -186,6 +186,17 @@ class Command(BaseCommand):
                         "availability": Product.AvailabilityStatus.OUT_OF_SEASON,
                         "allergens": [],
                     },
+                    {
+                        "name": "Bramley Apples",
+                        "category": "Fruit",
+                        "price": Decimal("2.20"),
+                        "stock": Decimal("40"),
+                        "unit": Product.Unit.KG,
+                        "description": "Sharp Bramley apples for kitchens, desserts, and fresh fruit orders.",
+                        "is_organic": False,
+                        "availability": Product.AvailabilityStatus.IN_SEASON,
+                        "allergens": [],
+                    },
                 ],
             },
             {
@@ -293,6 +304,17 @@ class Command(BaseCommand):
                         "availability": Product.AvailabilityStatus.IN_SEASON,
                         "allergens": ["Gluten", "Eggs", "Nuts"],
                     },
+                    {
+                        "name": "Stoneground Oats",
+                        "category": "Pantry",
+                        "price": Decimal("2.80"),
+                        "stock": Decimal("30"),
+                        "unit": Product.Unit.KG,
+                        "description": "Stoneground oats for porridge, baking, and bulk catering prep.",
+                        "is_organic": False,
+                        "availability": Product.AvailabilityStatus.YEAR_ROUND,
+                        "allergens": ["Gluten"],
+                    },
                 ],
             },
             {
@@ -342,6 +364,17 @@ class Command(BaseCommand):
                         "description": "Small lettuce heads for local kitchens.",
                         "is_organic": False,
                         "availability": Product.AvailabilityStatus.IN_SEASON,
+                        "allergens": [],
+                    },
+                    {
+                        "name": "Fresh Basil",
+                        "category": "Herbs",
+                        "price": Decimal("1.25"),
+                        "stock": Decimal("28"),
+                        "unit": Product.Unit.EACH,
+                        "description": "Fresh basil bunches for sauces, garnishes, and kitchen prep.",
+                        "is_organic": True,
+                        "availability": Product.AvailabilityStatus.YEAR_ROUND,
                         "allergens": [],
                     },
                 ],
@@ -413,6 +446,12 @@ class Command(BaseCommand):
 
             PaymentTransaction.objects.all().delete()
             WeeklySettlement.objects.all().delete()
+
+            # Recurring templates reference products through protected foreign keys,
+            # so they must be cleared before products are deleted.
+            from orders.models import RecurringOrder, RecurringOrderItem  # type: ignore
+            RecurringOrderItem.objects.all().delete()
+            RecurringOrder.objects.all().delete()
 
             ProducerOrder.objects.all().delete()
             OrderItem.objects.all().delete()
@@ -517,7 +556,7 @@ class Command(BaseCommand):
         # -------------------------
         # 4) CATALOG (CATEGORIES + ALLERGENS)
         # -------------------------
-        category_names = ["Vegetables", "Dairy & Eggs", "Bakery", "Meat", "Drinks"]
+        category_names = ["Vegetables", "Dairy & Eggs", "Bakery", "Meat", "Drinks", "Fruit", "Herbs", "Pantry"]
         categories: dict[str, Category] = {}
         for name in category_names:
             c, _ = Category.objects.get_or_create(name=name, defaults={"slug": slugify(name)})

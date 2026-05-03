@@ -2,53 +2,53 @@
 {% block title %}Producer Order {{ producer_order.id }} | BRFN{% endblock %}
 
 {% block content %}
-<div class="glass p-4 mt-4">
-  <div class="d-flex justify-content-between align-items-start mb-3">
-    <div>
-      <h2 class="text-white mb-1">Producer Order #{{ producer_order.id }}</h2>
-      <div class="text-soft">Parent order: #{{ producer_order.parent_order.id }}</div>
-    </div>
-    <a class="btn btn-outline-light" href="{% url 'producer_orders' %}">Back</a>
-  </div>
-
-  <div class="row g-3 mb-4">
-    <div class="col-md-6">
-      <div class="surface-tile p-3">
-        <div class="text-soft mb-1">Delivery date</div>
-        <div class="text-white">{{ producer_order.parent_order.delivery_date|default:"Not specified" }}</div>
+<div class="page-shell">
+  <div class="invoice-shell">
+    <div class="invoice-header">
+      <div>
+        <a class="btn btn-back mb-3" href="{% url 'producer_orders' %}">← Back to Orders</a>
+        <h1 class="page-title" style="font-size: clamp(2rem, 4vw, 2.7rem);">Producer Order #{{ producer_order.id }}</h1>
+        <p class="page-subtitle">Parent order: #{{ producer_order.parent_order.id }}</p>
       </div>
     </div>
-    <div class="col-md-6">
-      <div class="surface-tile p-3">
-        <div class="text-soft mb-1">Special instructions</div>
-        <div class="text-white">{{ producer_order.parent_order.special_instructions|default:"None" }}</div>
+
+    <div class="invoice-grid">
+      <div class="invoice-meta-card">
+        <span class="label">Delivery date</span>
+        <div>{{ producer_order.parent_order.delivery_date|default:"Not specified" }}</div>
+      </div>
+      <div class="invoice-meta-card">
+        <span class="label">Special instructions</span>
+        <div>{{ producer_order.parent_order.special_instructions|default:"None" }}</div>
       </div>
     </div>
-  </div>
 
-  <div class="table-responsive">
-    <table class="table table-dark align-middle">
-      <thead>
-        <tr>
-          <th>Product</th>
-          <th>Qty</th>
-          <th>Unit</th>
-          <th>Total</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for item in items %}
-        <tr>
-          <td class="text-white">{{ item.product.name }}</td>
-          <td class="text-white">{{ item.quantity }}</td>
-          <td class="text-white">£{{ item.unit_price|floatformat:2 }}</td>
-          <td class="text-white">£{{ item.line_total|floatformat:2 }}</td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="4" class="text-center text-soft py-4">No items.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <section class="invoice-section">
+      <div class="table-responsive">
+        <table class="table align-middle">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Qty</th>
+              <th>Unit Price</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in items %}
+              <tr>
+                <td>{{ item.product.name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>£{{ item.unit_price|floatformat:2 }}</td>
+                <td>£{{ item.line_total|floatformat:2 }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4" class="text-center text-soft py-4">No items.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
   </div>
 </div>
 {% endblock %}

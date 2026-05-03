@@ -2,22 +2,25 @@
 {% block title %}Payment | BRFN{% endblock %}
 
 {% block content %}
-<div class="glass p-4 mt-4" style="max-width: 720px;">
-  <div class="mb-3">
-    <h2 class="text-white mb-2">Pay for Order #{{ order.id }}</h2>
-    <p class="text-soft mb-0">Confirm the payment for this order below.</p>
-  </div>
+<div class="page-shell payment-shell">
+  <div class="payment-card">
+    <div class="mb-4">
+      <a href="{% url 'order_history' %}" class="btn btn-back mb-3">← Back to Orders</a>
+      <h1 class="page-title" style="font-size: clamp(2rem, 4vw, 2.6rem);">Pay for Order #{{ order.id }}</h1>
+      <p class="page-subtitle">Confirm the payment for this order below.</p>
+    </div>
 
-  <div class="mb-4 p-3 rounded surface-tile">
-    <div class="text-soft mb-1">Total Amount</div>
-    <div class="h3 mb-0 text-danger">£{{ order.total|floatformat:2 }}</div>
-  </div>
+    <div class="payment-amount mb-4">
+      <div class="detail-label">Total amount</div>
+      <strong>£{{ order.total|floatformat:2 }}</strong>
+    </div>
 
-  <form method="POST">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-success btn-lg btn-round">
-      Confirm Payment
-    </button>
-  </form>
+    <form method="POST">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-success w-100">
+        Confirm Payment
+      </button>
+    </form>
+  </div>
 </div>
 {% endblock %}

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Weekly Settlements | BRFN{% endblock %}
+
+{% block content %}
+<div class="page-shell">
+  <div class="section-card cart-header-card mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div>
+        <a href="{% url 'producer_dashboard' %}" class="btn btn-back mb-3">← Back to Dashboard</a>
+        <h1 class="page-title">Weekly Payment Settlements</h1>
+        <p class="page-subtitle">Review your weekly sales totals, platform commission, and expected producer payout.</p>
+        {% if producer_profile %}
+          <p class="small text-soft mb-0">Producer: {{ producer_profile.business_name }}</p>
+        {% endif %}
+      </div>
+      <a href="{% url 'producer_dashboard' %}" class="btn btn-outline-secondary">Back to Dashboard</a>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-md-6">
+      <div class="section-card metric-card h-100">
+        <div class="metric-label">Total Gross Sales</div>
+        <div class="metric-value">£{{ total_gross|floatformat:2 }}</div>
+        <div class="small text-soft">Across all stored weekly settlements</div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="section-card metric-card h-100">
+        <div class="metric-label">Total Payout</div>
+        <div class="metric-value">£{{ total_payout|floatformat:2 }}</div>
+        <div class="small text-soft">What you receive after platform commission</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-card dashboard-section">
+    <h2 class="section-title mb-3">Settlement History</h2>
+
+    {% if settlements %}
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Period</th>
+              <th>Gross Sales</th>
+              <th>Commission</th>
+              <th>Payout</th>
+              <th>Status</th>
+              <th>Paid At</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for settlement in settlements %}
+              <tr>
+                <td>{{ settlement.period_start }} to {{ settlement.period_end }}</td>
+                <td>£{{ settlement.gross_sales|floatformat:2 }}</td>
+                <td>£{{ settlement.commission_total|floatformat:2 }}</td>
+                <td class="fw-semibold">£{{ settlement.payout_total|floatformat:2 }}</td>
+                <td>
+                  <span class="badge {% if settlement.status == 'paid' %}bg-success{% elif settlement.status == 'final' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                    {{ settlement.get_status_display }}
+                  </span>
+                </td>
+                <td>{{ settlement.paid_at|date:"Y-m-d H:i"|default:"Not paid yet" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="alert alert-info mb-0">No weekly settlements have been generated yet.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

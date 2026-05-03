@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Finance Report | BRFN{% endblock %}
+
+{% block content %}
+<div class="page-shell">
+  <div class="section-card cart-header-card mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div>
+        <a href="{% url 'admin_dashboard' %}" class="btn btn-back mb-3">← Back to Dashboard</a>
+        <h1 class="page-title">Commission Monitoring Report</h1>
+        <p class="page-subtitle">Check weekly settlement numbers, platform commission totals, and recent payment activity.</p>
+      </div>
+      <div class="d-flex gap-2 flex-wrap">
+        <a href="{% url 'admin_dashboard' %}" class="btn btn-outline-secondary">Back to Dashboard</a>
+        <a href="{% url 'admin_finance_report' %}?format=csv" class="btn btn-primary">Download CSV Report</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-md-4">
+      <div class="section-card metric-card h-100">
+        <div class="metric-label">Gross Sales</div>
+        <div class="metric-value">£{{ total_gross_sales|floatformat:2 }}</div>
+        <div class="small text-soft">Sum of all weekly settlements</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="section-card metric-card h-100">
+        <div class="metric-label">Network Commission</div>
+        <div class="metric-value">£{{ total_commission|floatformat:2 }}</div>
+        <div class="small text-soft">Tracked platform commission totals</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="section-card metric-card h-100">
+        <div class="metric-label">Producer Payouts</div>
+        <div class="metric-value">£{{ total_payout|floatformat:2 }}</div>
+        <div class="small text-soft">{{ settlement_count }} weekly settlement records</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-card dashboard-section mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+      <h2 class="section-title mb-0">Weekly Settlement Breakdown</h2>
+      <span class="badge admin-badge-note">{{ settled_order_count }} paid / processing / completed orders tracked</span>
+    </div>
+
+    {% if producer_rows %}
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Producer</th>
+              <th>Period</th>
+              <th>Gross Sales</th>
+              <th>Commission</th>
+              <th>Payout</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in producer_rows %}
+              <tr>
+                <td>{{ row.producer_name }}</td>
+                <td>{{ row.period_start }} to {{ row.period_end }}</td>
+                <td>£{{ row.gross_sales|floatformat:2 }}</td>
+                <td>£{{ row.commission_total|floatformat:2 }}</td>
+                <td class="fw-semibold">£{{ row.payout_total|floatformat:2 }}</td>
+                <td>{{ row.status }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="alert alert-info mb-0">No settlement data is available yet.</div>
+    {% endif %}
+  </div>
+
+  <div class="section-card dashboard-section">
+    <h2 class="section-title mb-3">Recent Payment Transactions</h2>
+    {% if transactions %}
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Order</th>
+              <th>Customer</th>
+              <th>Provider</th>
+              <th>Status</th>
+              <th>Amount</th>
+              <th>Reference</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for txn in transactions %}
+              <tr>
+                <td>#{{ txn.order.id }}</td>
+                <td>{{ txn.order.customer.username }}</td>
+                <td>{{ txn.provider }}</td>
+                <td>{{ txn.get_status_display }}</td>
+                <td>£{{ txn.amount|floatformat:2 }}</td>
+                <td>{{ txn.provider_reference|default:"Not available" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="alert alert-info mb-0">No payment transactions recorded yet.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

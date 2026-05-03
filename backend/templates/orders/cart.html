@@ -6,6 +6,7 @@
   <div class="section-card cart-header-card mb-4">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
       <div>
+        <a href="{% url 'product_list' %}" class="btn btn-back mb-3">← Back to Store</a>
         <h1 class="page-title">My Cart</h1>
         <p class="page-subtitle">Review quantities, check food miles, and complete checkout without losing your place.</p>
       </div>
@@ -35,8 +36,7 @@
                 <strong>£{{ section.subtotal|floatformat:2 }}</strong>
               </div>
             </div>
-
-            <div class="table-responsive">
+            <div class="table-responsive table-scroll">
               <table class="table align-middle mb-0">
                 <thead>
                   <tr>

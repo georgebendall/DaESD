@@ -1,6 +1,7 @@
 {% extends "layouts/auth_base.html" %}
 
 {% block title %}Producer Registration{% endblock %}
+{% block auth_shell_class %}auth-shell--wide{% endblock %}
 
 {% block content %}
   <div class="brand">
@@ -18,22 +19,22 @@
     </div>
   {% endif %}
 
-  <form method="post">
+  <form method="post" class="auth-form-grid">
     {% csrf_token %}
 
-    <div class="field">
+    <div class="field full-width">
       <label for="{{ form.username.id_for_label }}">Username</label>
       {{ form.username }}
       {{ form.username.errors }}
     </div>
 
-    <div class="field">
+    <div class="field full-width">
       <label for="{{ form.email.id_for_label }}">Email</label>
       {{ form.email }}
       {{ form.email.errors }}
     </div>
 
-    <div class="field">
+    <div class="field full-width">
       <label for="{{ form.business_name.id_for_label }}">Business Name</label>
       {{ form.business_name }}
       {{ form.business_name.errors }}
@@ -45,7 +46,7 @@
       {{ form.contact_phone.errors }}
     </div>
 
-    <div class="field">
+    <div class="field full-width">
       <label for="{{ form.address_line1.id_for_label }}">Address Line 1</label>
       {{ form.address_line1 }}
       {{ form.address_line1.errors }}
@@ -63,19 +64,19 @@
       {{ form.postcode.errors }}
     </div>
 
-    <div class="field">
+    <div class="field full-width">
       <label for="{{ form.password1.id_for_label }}">Password</label>
       {{ form.password1 }}
       {{ form.password1.errors }}
     </div>
 
-    <div class="field">
+    <div class="field full-width">
       <label for="{{ form.password2.id_for_label }}">Confirm Password</label>
       {{ form.password2 }}
       {{ form.password2.errors }}
     </div>
 
-    <div class="actions">
+    <div class="actions full-width">
       <button type="submit">Create Producer Account</button>
       <a class="auth-link-secondary" href="{% url 'login' %}">Back to login</a>
     </div>

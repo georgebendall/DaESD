@@ -24,7 +24,7 @@ class ProducerProductForm(forms.ModelForm):
     allergens = forms.ModelMultipleChoiceField(
         queryset=Allergen.objects.none(),
         required=False,
-        widget=forms.SelectMultiple(attrs={"class": "form-select", "size": 6}),
+        widget=forms.CheckboxSelectMultiple(),
     )
     surplus_expires_at = forms.DateTimeField(
         required=False,

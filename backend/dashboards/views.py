@@ -1,21 +1,34 @@
+from decimal import Decimal
+
 # backend/dashboards/views.py
+import csv
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from accounts.models import User
 from catalog.models import Product, ProductInventoryHistory
 from orders.models import Order, ProducerOrder
+from payments.models import PaymentTransaction, WeeklySettlement
 from .forms import ProducerProductForm
+
+
+def _admin_only_or_forbidden(request):
+    if not request.user.is_authenticated:
+        return redirect("login")
+    if not request.user.is_staff and getattr(request.user, "role", "") != User.Role.ADMIN:
+        return render(request, "dashboards/forbidden.html", status=403)
+    return None
 
 
 @login_required
 def admin_dashboard(request):
-    
-    if not request.user.is_staff and getattr(request.user, "role", "") != User.Role.ADMIN:
-        return render(request, "dashboards/forbidden.html", status=403)
+    admin_guard = _admin_only_or_forbidden(request)
+    if admin_guard:
+        return admin_guard
 
     total_products = Product.objects.count()
     active_products = Product.objects.filter(is_active=True).count()
@@ -56,6 +69,20 @@ def admin_dashboard(request):
         .order_by("-created_at")[:15]
     )
 
+    total_commission = sum(
+        Order.objects.filter(
+            status__in=[Order.Status.PAID, Order.Status.PROCESSING, Order.Status.COMPLETED]
+        ).values_list("commission_total", flat=True),
+        Decimal("0.00"),
+    )
+    total_gross_sales = sum(
+        WeeklySettlement.objects.values_list("gross_sales", flat=True),
+        Decimal("0.00"),
+    )
+    payment_success_count = PaymentTransaction.objects.filter(
+        status=PaymentTransaction.Status.SUCCEEDED
+    ).count()
+
     context = {
         "total_products": total_products,
         "active_products": active_products,
@@ -66,8 +93,101 @@ def admin_dashboard(request):
         "producer_list": producer_list,
         "recent_orders": recent_orders,
         "recent_producer_orders": recent_producer_orders,
+        "total_commission": total_commission,
+        "total_gross_sales": total_gross_sales,
+        "payment_success_count": payment_success_count,
     }
     return render(request, "dashboards/admin_dashboard.html", context)
+
+
+@login_required
+def admin_finance_report(request):
+    admin_guard = _admin_only_or_forbidden(request)
+    if admin_guard:
+        return admin_guard
+
+    settlements = list(
+        WeeklySettlement.objects.select_related("producer", "producer__producer_profile")
+        .order_by("-period_end", "producer__username")
+    )
+    settled_orders = Order.objects.filter(
+        status__in=[Order.Status.PAID, Order.Status.PROCESSING, Order.Status.COMPLETED]
+    )
+    transactions = list(
+        PaymentTransaction.objects.select_related("order", "order__customer")
+        .order_by("-created_at")[:20]
+    )
+
+    total_gross_sales = sum(
+        (settlement.gross_sales for settlement in settlements),
+        Decimal("0.00"),
+    )
+    total_commission = sum(
+        (settlement.commission_total for settlement in settlements),
+        Decimal("0.00"),
+    )
+    total_payout = sum(
+        (settlement.payout_total for settlement in settlements),
+        Decimal("0.00"),
+    )
+
+    producer_rows = []
+    for settlement in settlements:
+        profile = getattr(settlement.producer, "producer_profile", None)
+        producer_rows.append(
+            {
+                "producer_name": getattr(profile, "business_name", "") or settlement.producer.username,
+                "period_start": settlement.period_start,
+                "period_end": settlement.period_end,
+                "gross_sales": settlement.gross_sales,
+                "commission_total": settlement.commission_total,
+                "payout_total": settlement.payout_total,
+                "status": settlement.get_status_display(),
+            }
+        )
+
+    if request.GET.get("format") == "csv":
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = 'attachment; filename="brfn-commission-report.csv"'
+        writer = csv.writer(response)
+        writer.writerow(
+            [
+                "Producer",
+                "Period Start",
+                "Period End",
+                "Gross Sales",
+                "Commission",
+                "Payout",
+                "Status",
+            ]
+        )
+        for row in producer_rows:
+            writer.writerow(
+                [
+                    row["producer_name"],
+                    row["period_start"],
+                    row["period_end"],
+                    row["gross_sales"],
+                    row["commission_total"],
+                    row["payout_total"],
+                    row["status"],
+                ]
+            )
+        return response
+
+    return render(
+        request,
+        "dashboards/admin_finance_report.html",
+        {
+            "producer_rows": producer_rows,
+            "transactions": transactions,
+            "settlement_count": len(producer_rows),
+            "settled_order_count": settled_orders.count(),
+            "total_gross_sales": total_gross_sales,
+            "total_commission": total_commission,
+            "total_payout": total_payout,
+        },
+    )
 
 @login_required
 def customer_dashboard(request):
@@ -123,6 +243,8 @@ def producer_dashboard(request):
     )
 
     low_stock_products = [p for p in products_qs if p.is_low_stock]
+    settlements_qs = WeeklySettlement.objects.filter(producer=request.user).order_by("-period_end")
+    latest_settlement = settlements_qs.first()
 
     context = {
         "products_count": products_qs.count(),
@@ -130,8 +252,41 @@ def producer_dashboard(request):
         "low_stock_count": len(low_stock_products),
         "low_stock_products": low_stock_products[:5],
         "recent_products": products_qs[:5],
+        "latest_settlement": latest_settlement,
     }
     return render(request, "dashboards/producer_dashboard.html", context)
+
+
+@login_required
+def producer_settlements(request):
+    redirect_response = _producer_only_or_redirect(request)
+    if redirect_response:
+        return redirect_response
+
+    settlements = (
+        WeeklySettlement.objects.filter(producer=request.user)
+        .order_by("-period_end", "-created_at")
+    )
+
+    total_payout = sum(
+        (settlement.payout_total for settlement in settlements),
+        start=Decimal("0.00"),
+    )
+    total_gross = sum(
+        (settlement.gross_sales for settlement in settlements),
+        start=Decimal("0.00"),
+    )
+
+    return render(
+        request,
+        "dashboards/producer_settlements.html",
+        {
+            "producer_profile": getattr(request.user, "producer_profile", None),
+            "settlements": settlements,
+            "total_payout": total_payout,
+            "total_gross": total_gross,
+        },
+    )
 
 
 @login_required

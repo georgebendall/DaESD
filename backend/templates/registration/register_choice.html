@@ -1,6 +1,7 @@
 {% extends "layouts/auth_base.html" %}
 
 {% block title %}Create Account{% endblock %}
+{% block auth_shell_class %}auth-shell--medium{% endblock %}
 
 {% block content %}
   <div class="brand">
@@ -9,12 +10,21 @@
   </div>
 
   <p class="subtitle">
-    Choose the type of account you want to create.
+    Choose how you want to use BRFN.
   </p>
 
-  <div class="actions">
-    <a class="auth-link-button" href="{% url 'register_customer' %}">Register as Customer</a>
-    <a class="auth-link-button" href="{% url 'register_producer' %}">Register as Producer</a>
-    <a class="auth-link-secondary" href="{% url 'login' %}">Already have an account? Log in</a>
+  <div class="account-choice-grid">
+    <a class="account-choice" href="{% url 'register_customer' %}">
+      <strong>Customer</strong>
+      <span>Browse local products, place orders, and manage your cart.</span>
+    </a>
+    <a class="account-choice" href="{% url 'register_producer' %}">
+      <strong>Become a producer</strong>
+      <span>List products, manage stock, and view orders.</span>
+    </a>
+    <a class="account-choice" href="{% url 'login' %}">
+      <strong>Already have an account? Log in</strong>
+      <span>Sign in to manage orders, products, and your account.</span>
+    </a>
   </div>
 {% endblock %}

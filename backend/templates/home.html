@@ -5,48 +5,19 @@
 {% block content %}
 <div class="page-shell">
   <section class="hero-slab mb-4">
-    <div class="row g-4 align-items-center">
-      <div class="col-lg-7">
-        <span class="eyebrow">Bristol Regional Food Network</span>
-        <h1 class="page-title mt-3">A cleaner way to browse local food and place repeat orders.</h1>
-        <p class="page-subtitle">
-          BRFN brings producers and customers together with a simpler store, clearer product details, visible food miles, and an easier cart and checkout flow.
-        </p>
-        <div class="d-flex gap-3 flex-wrap mt-4">
-          <a href="/shop/products/" class="btn btn-primary btn-lg">Browse Products</a>
-          {% if request.user.is_authenticated %}
-            <a href="{% url 'cart_page' %}" class="btn btn-outline-secondary btn-lg">Open Cart</a>
-          {% else %}
-            <a href="/accounts/register/" class="btn btn-outline-secondary btn-lg">Create Account</a>
-          {% endif %}
-        </div>
-      </div>
-      <div class="col-lg-5">
-        <div class="section-card hero-note">
-          <div class="feature-list">
-            <div class="feature-row">
-              <span class="feature-icon">1</span>
-              <div>
-                <strong>Browse faster</strong>
-                <div class="small text-soft">Use simple filters for category, allergens, availability, and surplus deals.</div>
-              </div>
-            </div>
-            <div class="feature-row">
-              <span class="feature-icon">2</span>
-              <div>
-                <strong>See the right details</strong>
-                <div class="small text-soft">Compare producers, price, organic status, and food miles right on the product cards.</div>
-              </div>
-            </div>
-            <div class="feature-row">
-              <span class="feature-icon">3</span>
-              <div>
-                <strong>Order with confidence</strong>
-                <div class="small text-soft">Keep your cart visible and move from store to checkout without confusion.</div>
-              </div>
-            </div>
-          </div>
-        </div>
+    <div>
+      <span class="eyebrow">Bristol Regional Food Network</span>
+      <h1 class="page-title mt-3">Order local food from trusted Bristol suppliers.</h1>
+      <p class="page-subtitle">
+        BRFN helps customers and producers manage local food orders in one place. Browse products, check supplier details, add items to your cart, and keep track of repeat orders.
+      </p>
+      <div class="page-actions mt-4">
+        <a href="/shop/products/" class="btn btn-primary">Browse Products</a>
+        {% if request.user.is_authenticated %}
+          <a href="{% url 'cart_page' %}" class="btn btn-outline-secondary">View Cart</a>
+        {% else %}
+          <a href="/accounts/register/" class="btn btn-outline-secondary">Create Account</a>
+        {% endif %}
       </div>
     </div>
   </section>
@@ -54,20 +25,20 @@
   <section class="row g-4 mb-4">
     <div class="col-md-4">
       <div class="section-card info-card h-100">
-        <h3>Fresh produce</h3>
-        <p>Explore vegetables, dairy, bakery, and more in a layout that is easier to scan and compare.</p>
+        <h3>Browse local products</h3>
+        <p>Find vegetables, fruit, dairy, bakery items, and more from regional producers.</p>
       </div>
     </div>
     <div class="col-md-4">
       <div class="section-card info-card h-100">
-        <h3>Reliable ordering</h3>
-        <p>Use the cart, order history, and recurring orders to keep weekly purchasing simple and consistent.</p>
+        <h3>Order with less hassle</h3>
+        <p>Use the cart, checkout, and order history to manage regular purchasing.</p>
       </div>
     </div>
     <div class="col-md-4">
       <div class="section-card info-card h-100">
-        <h3>Local impact</h3>
-        <p>Check food miles, supplier details, and availability before you commit to an order.</p>
+        <h3>Support local suppliers</h3>
+        <p>Compare producers, availability, food miles, and organic information before ordering.</p>
       </div>
     </div>
   </section>

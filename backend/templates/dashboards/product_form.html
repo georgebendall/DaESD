@@ -2,118 +2,126 @@
 {% block title %}{{ page_title }} | BRFN{% endblock %}
 
 {% block content %}
-<div class="glass p-4 mt-4" style="max-width: 900px; margin-inline: auto;">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-      <h2 class="text-white mb-1">{{ page_title }}</h2>
-      <p class="text-soft mb-0">
-        Update stock, availability, and inventory settings.
-      </p>
+<div class="page-shell inventory-page">
+  <div class="page-header">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+      <div>
+        <a href="{% url 'producer_stock' %}" class="btn btn-back mb-3">← Back to Inventory</a>
+        <h1 class="page-title" style="font-size: clamp(2rem, 4vw, 2.8rem);">{{ page_title }}</h1>
+        <p class="page-subtitle">Update stock, pricing, availability, and product details.</p>
+      </div>
     </div>
-
-    <a href="{% url 'producer_stock' %}" class="btn btn-outline-light btn-round">Back</a>
   </div>
 
-  {% if form.errors %}
-    <div class="alert alert-danger">
-      Please fix the errors below.
-      {{ form.non_field_errors }}
-    </div>
-  {% endif %}
-
-  <form method="post" class="row g-3">
-    {% csrf_token %}
-
-    <div class="col-md-6">
-      <label class="form-label text-white">Product Name</label>
-      {{ form.name }}
-      {% if form.name.errors %}<div class="text-warning small mt-1">{{ form.name.errors }}</div>{% endif %}
-    </div>
-
-    <div class="col-md-6">
-      <label class="form-label text-white">Category</label>
-      {{ form.category }}
-      {% if form.category.errors %}<div class="text-warning small mt-1">{{ form.category.errors }}</div>{% endif %}
-    </div>
-
-    <div class="col-12">
-      <label class="form-label text-white">Description</label>
-      {{ form.description }}
-      {% if form.description.errors %}<div class="text-warning small mt-1">{{ form.description.errors }}</div>{% endif %}
-    </div>
-
-    <div class="col-md-4">
-      <label class="form-label text-white">Unit</label>
-      {{ form.unit }}
-      {% if form.unit.errors %}<div class="text-warning small mt-1">{{ form.unit.errors }}</div>{% endif %}
-    </div>
-
-    <div class="col-md-4">
-      <label class="form-label text-white">Price</label>
-      {{ form.price }}
-      {% if form.price.errors %}<div class="text-warning small mt-1">{{ form.price.errors }}</div>{% endif %}
-    </div>
-
-    <div class="col-md-4">
-      <label class="form-label text-white">Stock Quantity</label>
-      {{ form.stock }}
-      {% if form.stock.errors %}<div class="text-warning small mt-1">{{ form.stock.errors }}</div>{% endif %}
-    </div>
-
-    <div class="col-md-4">
-      <label class="form-label text-white">Low Stock Threshold</label>
-      {{ form.stock_warning_level }}
-      {% if form.stock_warning_level.errors %}<div class="text-warning small mt-1">{{ form.stock_warning_level.errors }}</div>{% endif %}
-    </div>
-
-    <div class="col-md-6">
-      <label class="form-label text-white">Availability Status</label>
-      {{ form.availability_status }}
-      {% if form.availability_status.errors %}<div class="text-warning small mt-1">{{ form.availability_status.errors }}</div>{% endif %}
-    </div>
-
-    <div class="col-md-6">
-      <label class="form-label text-white">Allergens</label>
-      {{ form.allergens }}
-      {% if form.allergens.errors %}<div class="text-warning small mt-1">{{ form.allergens.errors }}</div>{% endif %}
-    </div>
-
-    <div class="col-12">
-      <div class="form-check">
-        {{ form.is_surplus }}
-        <label class="form-check-label text-white" for="{{ form.is_surplus.id_for_label }}">Mark as surplus / last-minute deal</label>
+  <div class="section-card dashboard-section">
+    {% if form.errors %}
+      <div class="alert alert-danger">
+        Please fix the errors below.
+        {{ form.non_field_errors }}
       </div>
-      {% if form.is_surplus.errors %}<div class="text-warning small mt-1">{{ form.is_surplus.errors }}</div>{% endif %}
-    </div>
+    {% endif %}
 
-    <div class="col-md-4">
-      <label class="form-label text-white">Discount %</label>
-      {{ form.surplus_discount_percent }}
-      {% if form.surplus_discount_percent.errors %}<div class="text-warning small mt-1">{{ form.surplus_discount_percent.errors }}</div>{% endif %}
-    </div>
+    <form method="post" class="row g-3">
+      {% csrf_token %}
 
-    <div class="col-md-4">
-      <label class="form-label text-white">Deal Expires At</label>
-      {{ form.surplus_expires_at }}
-      {% if form.surplus_expires_at.errors %}<div class="text-warning small mt-1">{{ form.surplus_expires_at.errors }}</div>{% endif %}
-    </div>
+      <div class="col-md-6">
+        <label class="form-label">Product Name</label>
+        {{ form.name }}
+        {% if form.name.errors %}<div class="text-danger small mt-1">{{ form.name.errors }}</div>{% endif %}
+      </div>
 
-    <div class="col-md-4">
-      <label class="form-label text-white">Surplus Note</label>
-      {{ form.surplus_note }}
-      {% if form.surplus_note.errors %}<div class="text-warning small mt-1">{{ form.surplus_note.errors }}</div>{% endif %}
-    </div>
+      <div class="col-md-6">
+        <label class="form-label">Category</label>
+        {{ form.category }}
+        {% if form.category.errors %}<div class="text-danger small mt-1">{{ form.category.errors }}</div>{% endif %}
+      </div>
 
-    <div class="col-md-4">
-      <label class="form-label text-white">Best Before Date</label>
-      {{ form.best_before_date }}
-      {% if form.best_before_date.errors %}<div class="text-warning small mt-1">{{ form.best_before_date.errors }}</div>{% endif %}
-    </div>
+      <div class="col-12">
+        <label class="form-label">Description</label>
+        {{ form.description }}
+        {% if form.description.errors %}<div class="text-danger small mt-1">{{ form.description.errors }}</div>{% endif %}
+      </div>
 
-    <div class="col-12 d-flex justify-content-end gap-2 mt-3">
-      <a href="{% url 'producer_stock' %}" class="btn btn-outline-light">Cancel</a>
-      <button type="submit" class="btn btn-success">{{ submit_label }}</button>
-    </div>
-  </form>
+      <div class="col-md-4">
+        <label class="form-label">Unit</label>
+        {{ form.unit }}
+        {% if form.unit.errors %}<div class="text-danger small mt-1">{{ form.unit.errors }}</div>{% endif %}
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Price</label>
+        {{ form.price }}
+        {% if form.price.errors %}<div class="text-danger small mt-1">{{ form.price.errors }}</div>{% endif %}
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Stock Quantity</label>
+        {{ form.stock }}
+        {% if form.stock.errors %}<div class="text-danger small mt-1">{{ form.stock.errors }}</div>{% endif %}
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Low Stock Threshold</label>
+        {{ form.stock_warning_level }}
+        {% if form.stock_warning_level.errors %}<div class="text-danger small mt-1">{{ form.stock_warning_level.errors }}</div>{% endif %}
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Availability Status</label>
+        {{ form.availability_status }}
+        {% if form.availability_status.errors %}<div class="text-danger small mt-1">{{ form.availability_status.errors }}</div>{% endif %}
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Best Before Date</label>
+        {{ form.best_before_date }}
+        {% if form.best_before_date.errors %}<div class="text-danger small mt-1">{{ form.best_before_date.errors }}</div>{% endif %}
+      </div>
+
+      <div class="col-12">
+        <label class="form-label">Allergens</label>
+        <div class="allergen-checkbox-grid">
+          {% for checkbox in form.allergens %}
+            <div class="allergen-check">
+              {{ checkbox.tag }}
+              <label for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}</label>
+            </div>
+          {% endfor %}
+        </div>
+        {% if form.allergens.errors %}<div class="text-danger small mt-1">{{ form.allergens.errors }}</div>{% endif %}
+      </div>
+
+      <div class="col-12">
+        <div class="form-check">
+          {{ form.is_surplus }}
+          <label class="form-check-label" for="{{ form.is_surplus.id_for_label }}">Mark as surplus / last-minute deal</label>
+        </div>
+        {% if form.is_surplus.errors %}<div class="text-danger small mt-1">{{ form.is_surplus.errors }}</div>{% endif %}
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Discount %</label>
+        {{ form.surplus_discount_percent }}
+        {% if form.surplus_discount_percent.errors %}<div class="text-danger small mt-1">{{ form.surplus_discount_percent.errors }}</div>{% endif %}
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Deal Expires At</label>
+        {{ form.surplus_expires_at }}
+        {% if form.surplus_expires_at.errors %}<div class="text-danger small mt-1">{{ form.surplus_expires_at.errors }}</div>{% endif %}
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Surplus Note</label>
+        {{ form.surplus_note }}
+        {% if form.surplus_note.errors %}<div class="text-danger small mt-1">{{ form.surplus_note.errors }}</div>{% endif %}
+      </div>
+
+      <div class="col-12 d-flex justify-content-end gap-2 mt-3 flex-wrap">
+        <a href="{% url 'producer_stock' %}" class="btn btn-outline-secondary">Cancel</a>
+        <button type="submit" class="btn btn-success">{{ submit_label }}</button>
+      </div>
+    </form>
+  </div>
 </div>
 {% endblock %}

@@ -532,8 +532,13 @@ def checkout_now(request):
             return redirect("checkout_now")
 
     delivery_address = (request.POST.get("delivery_address") or "").strip()
-    delivery_date = _parse_delivery_date(request.POST.get("delivery_date"))
-    if request.POST.get("delivery_date") and not delivery_date:
+    raw_delivery_date = (request.POST.get("delivery_date") or "").strip()
+    if not raw_delivery_date:
+        messages.error(request, "Delivery date is required.")
+        return redirect("checkout_now")
+
+    delivery_date = _parse_delivery_date(raw_delivery_date)
+    if raw_delivery_date and not delivery_date:
         messages.error(request, "Please choose a valid delivery date.")
         return redirect("checkout_now")
 

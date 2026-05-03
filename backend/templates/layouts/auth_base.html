@@ -11,17 +11,10 @@
   </head>
   <body>
     <main class="auth-page">
-      <!-- background -->
-      <div class="bg" aria-hidden="true">
-        <div class="blob one"></div>
-        <div class="blob two"></div>
-        <div class="blob three"></div>
-      </div>
-      <div class="grain" aria-hidden="true"></div>
-
-      <!-- content -->
-      <section class="card">
-        {% block content %}{% endblock %}
+      <section class="auth-shell {% block auth_shell_class %}auth-shell--compact{% endblock %}">
+        <section class="auth-card {% block auth_card_class %}{% endblock %}">
+          {% block content %}{% endblock %}
+        </section>
       </section>
     </main>
   </body>
