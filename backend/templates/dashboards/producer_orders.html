@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Manage Orders | BRFN{% endblock %}
+
+{% block content %}
+<div class="page-shell">
+  <div class="page-header mb-4">
+    <span class="eyebrow">Order Management</span>
+    <a class="btn btn-back mb-3" href="{% url 'producer_dashboard' %}">← Back to Dashboard</a>
+    <h1 class="page-title mt-2">Incoming Orders</h1>
+    <p class="page-subtitle">Manage and fulfill orders for your products.</p>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-12">
+      <div class="stat-card">
+        <h4 class="text-white mb-4">Order History</h4>
+
+        {% if producer_orders %}
+          <div class="table-responsive">
+            <table class="table table-dark table-hover align-middle">
+              <thead>
+                <tr>
+                  <th>Sub-Order ID</th>
+                  <th>Parent Order</th>
+                  <th>Customer</th>
+                  <th>Value</th>
+                  <th>Placed On</th>
+                  <th>Status</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for po in producer_orders %}
+                  <tr>
+                    <td class="fw-bold text-accent">#{{ po.id|truncatechars:8 }}</td>
+                    <td class="text-soft small">#{{ po.parent_order.id|truncatechars:8 }}</td>
+                    <td>{{ po.parent_order.customer.username }}</td>
+                    <td>£{{ po.subtotal|floatformat:2 }}</td>
+                    <td class="text-soft small">{{ po.created_at|date:"d M Y" }}</td>
+                    <td>
+                      <span class="badge {% if po.status == 'paid' or po.status == 'completed' %}bg-success{% elif po.status == 'pending' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                        {{ po.get_status_display }}
+                      </span>
+                    </td>
+                    <td class="text-end">
+                      <div class="d-flex gap-2 justify-content-end align-items-center">
+                        
+                        {% if po.status == 'pending' %}
+                          <!-- Accept Form -->
+                          <form action="{% url 'update_producer_order_status' po.id %}" method="POST" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="accepted">
+                            <button type="submit" class="btn btn-sm btn-success btn-round">Accept</button>
+                          </form>
+
+                          <!-- Decline Form -->
+                          <form action="{% url 'update_producer_order_status' po.id %}" method="POST" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="declined">
+                            <button type="submit" class="btn btn-sm btn-outline-danger btn-round">Decline</button>
+                          </form>
+                        {% endif %}
+
+                        <!-- Always show Details -->
+                        <a href="{% url 'producer_order_detail' po.id %}" class="btn btn-sm btn-outline-light btn-round">
+                          Details
+                        </a>
+                        
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="text-center py-5">
+            <p class="text-soft mb-0">No orders found for your products.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
