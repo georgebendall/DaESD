@@ -10,7 +10,11 @@
     <p class="page-subtitle">Browse local produce, compare suppliers quickly, and add the right items to your cart without extra clutter.</p>
   </div>
   <div class="store-actions">
-    <a class="btn {% if surplus_only == '1' %}btn-danger{% else %}btn-outline-danger{% endif %}" href="{% url 'surplus_deals' %}">Surplus Deals</a>
+    {% if surplus_only == '1' %}
+      <a class="btn btn-outline-secondary" href="{% url 'product_list' %}">Back to Store</a>
+    {% else %}
+      <a class="btn btn-outline-danger" href="{% url 'surplus_deals' %}">Surplus Deals</a>
+    {% endif %}
     {% if request.user.is_authenticated and request.user.is_customer_user %}
       <a class="btn btn-outline-secondary" href="{% url 'cart_page' %}">View Cart</a>
     {% endif %}
@@ -230,10 +234,10 @@
 
               {% if request.user.is_authenticated and request.user.is_customer_user %}
                 {% if product.stock > 0 %}
-                  <form method="POST" action="{% url 'cart_add' product.id %}" class="product-qty-form">
+                  <form method="POST" action="{% url 'cart_add' product.id %}" class="product-qty-form" data-stock-form novalidate>
                     {% csrf_token %}
                     <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                    <input type="number" name="quantity" value="1" min="1" class="form-control">
+                    <input type="number" name="quantity" value="1" min="1" step="1" class="form-control" aria-label="Quantity for {{ product.name }}" data-stock-input data-stock-max="{{ product.stock|floatformat:0 }}" data-product-name="{{ product.name }}" data-stock-label="{{ product.stock|floatformat:0 }} {{ product.unit_label }}">
                     <button type="submit" class="btn btn-success btn-sm">Add</button>
                   </form>
                 {% else %}

@@ -65,9 +65,9 @@
                         {% endif %}
                       </td>
                       <td>
-                        <form method="post" action="{% url 'cart_update' item.id %}" class="cart-quantity-form">
+                        <form method="post" action="{% url 'cart_update' item.id %}" class="cart-quantity-form" data-stock-form novalidate>
                           {% csrf_token %}
-                          <input type="number" name="quantity" value="{{ item.quantity }}" min="1" class="form-control">
+                          <input type="number" name="quantity" value="{{ item.quantity }}" min="1" step="1" class="form-control" aria-label="Quantity for {{ item.product.name }}" data-stock-input data-stock-max="{{ item.product.stock|floatformat:0 }}" data-product-name="{{ item.product.name }}" data-stock-label="{{ item.product.stock|floatformat:0 }} {{ item.product.unit_label }}">
                           <button type="submit" class="btn btn-outline-secondary btn-sm">Update</button>
                         </form>
                         <div class="small text-soft mt-1">{{ item.quantity_display }}</div>

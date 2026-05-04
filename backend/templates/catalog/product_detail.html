@@ -127,10 +127,10 @@
       {% if request.user.is_authenticated and request.user.is_customer_user %}
         <div class="detail-block">
           {% if product.stock > 0 %}
-            <form method="POST" action="{% url 'cart_add' product.id %}" class="detail-cta-form">
+            <form method="POST" action="{% url 'cart_add' product.id %}" class="detail-cta-form" data-stock-form novalidate>
               {% csrf_token %}
               <input type="hidden" name="next" value="{{ request.get_full_path }}">
-              <input type="number" name="quantity" value="1" min="1" class="form-control">
+              <input type="number" name="quantity" value="1" min="1" step="1" class="form-control" aria-label="Quantity for {{ product.name }}" data-stock-input data-stock-max="{{ product.stock|floatformat:0 }}" data-product-name="{{ product.name }}" data-stock-label="{{ product.stock|floatformat:0 }} {{ product.unit_label }}">
               <button type="submit" class="btn btn-success">Add to cart</button>
             </form>
             <div class="small text-soft mt-2">Enter quantity in {{ product.unit_label }}.</div>

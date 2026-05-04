@@ -103,6 +103,91 @@
 
         setTimeout(removeToast, 8000);
       });
+
+      document.querySelectorAll("[data-stock-form]").forEach(function (form) {
+        var input = form.querySelector("[data-stock-input]");
+        if (!input) return;
+
+        var popup = null;
+        var popupTimer = null;
+
+        var removePopup = function () {
+          if (popupTimer) {
+            clearTimeout(popupTimer);
+            popupTimer = null;
+          }
+          if (popup) {
+            popup.remove();
+            popup = null;
+          }
+        };
+
+        var maxValue = function () {
+          var rawMax = parseInt(input.dataset.stockMax || "", 10);
+          return Number.isFinite(rawMax) ? rawMax : null;
+        };
+
+        var currentValue = function () {
+          var rawValue = parseInt(input.value || "", 10);
+          return Number.isFinite(rawValue) ? rawValue : null;
+        };
+
+        var showPopup = function () {
+          removePopup();
+
+          var stockLabel = input.dataset.stockLabel || "current stock";
+          popup = document.createElement("div");
+          popup.className = "stock-validation-popup";
+          popup.setAttribute("role", "alert");
+          popup.innerHTML =
+            "<strong>Quantity not available</strong>" +
+            "The quantity you selected is not currently in stock. Only " +
+            stockLabel +
+            " available for this product.";
+
+          form.appendChild(popup);
+          popupTimer = window.setTimeout(removePopup, 5000);
+        };
+
+        var enforceLimit = function (showMessage) {
+          var max = maxValue();
+          var value = currentValue();
+
+          if (max === null || value === null) {
+            removePopup();
+            return true;
+          }
+
+          if (value > max) {
+            input.value = String(max);
+            if (showMessage) {
+              showPopup();
+            }
+            return false;
+          }
+
+          if (value < 1) {
+            input.value = "1";
+          }
+
+          removePopup();
+          return true;
+        };
+
+        input.addEventListener("input", function () {
+          removePopup();
+        });
+
+        input.addEventListener("change", function () {
+          enforceLimit(true);
+        });
+
+        form.addEventListener("submit", function (event) {
+          if (!enforceLimit(true)) {
+            event.preventDefault();
+          }
+        });
+      });
     </script>
     {% block extra_js %}{% endblock %}
   </body>
