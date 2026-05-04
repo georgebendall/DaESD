@@ -785,3 +785,20 @@ def producer_order_detail_page(request, producer_order_id):
         "orders/producer_order_detail.html",
         {"producer_order": producer_order, "items": items},
     )
+@login_required
+@require_POST
+def update_producer_order_status(request, producer_order_id):
+    # Only producers can perform this action
+    if getattr(request.user, "role", "") != User.Role.PRODUCER:
+        return redirect("after_login")
+
+    # Ensure the order belongs to THIS producer
+    order = get_object_or_404(ProducerOrder, id=producer_order_id, producer=request.user)
+    
+    new_status = request.POST.get("status")
+    if new_status in [ProducerOrder.Status.ACCEPTED, ProducerOrder.Status.DECLINED]:
+        order.status = new_status
+        order.save()
+        messages.success(request, f"Order #{str(order.id)[:8]} has been {new_status}.")
+    
+    return redirect("producer_orders")
