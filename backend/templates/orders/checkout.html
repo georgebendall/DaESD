@@ -75,12 +75,26 @@
             <span>Subtotal</span>
             <strong>£{{ cart.subtotal|floatformat:2 }}</strong>
           </div>
+          <div class="summary-row">
+            <span>Network commission (5%)</span>
+            <strong>£{{ commission_total|floatformat:2 }}</strong>
+          </div>
           {% if has_food_miles %}
             <div class="summary-row">
               <span>Total food miles</span>
-              <strong>{{ total_food_miles }} miles</strong>
+              <strong>
+                {% if total_food_miles < 1 %}
+                  Under 1 mile
+                {% else %}
+                  {{ total_food_miles }} miles
+                {% endif %}
+              </strong>
             </div>
           {% endif %}
+          <div class="summary-row">
+            <span>Total</span>
+            <strong>£{{ order_total|floatformat:2 }}</strong>
+          </div>
 
           <div class="mt-4">
             <label class="form-label">Delivery Address</label>
@@ -89,8 +103,9 @@
 
           <div class="mt-3">
             <label class="form-label">Delivery Date <span class="text-danger">*</span></label>
-            <input type="date" name="delivery_date" id="deliveryDateInput" class="form-control" required>
-            <div class="small text-soft mt-1">Required for this checkout. Producers need at least 48 hours lead time.</div>
+            <input type="date" name="delivery_date" id="deliveryDateInput" class="form-control" data-min-delivery="{{ minimum_delivery_date }}" required>
+            <div class="small text-soft mt-1">Required for this checkout. Earliest available date: {{ minimum_delivery_date_label }}.</div>
+            <div class="small text-danger mt-1 d-none" id="deliveryDateWarning">Please choose a delivery date at least 48 hours from today.</div>
           </div>
 
           <div class="mt-3">
@@ -162,14 +177,17 @@
       if (!deliveryDateInput) return;
 
       var weekdayMap = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-      var now = new Date();
-      var minLeadTime = new Date(now.getTime() + (48 * 60 * 60 * 1000));
-      var minDateString = minLeadTime.toISOString().slice(0, 10);
+      var minDateString = deliveryDateInput.dataset.minDelivery || "";
+      var deliveryDateWarning = document.getElementById("deliveryDateWarning");
 
-      deliveryDateInput.setAttribute("min", minDateString);
-      if (!deliveryDateInput.value) {
-        deliveryDateInput.value = minDateString;
-      }
+      var isBeforeMinimum = function (value) {
+        return Boolean(value && minDateString && value < minDateString);
+      };
+
+      var setDateWarning = function (show) {
+        if (!deliveryDateWarning) return;
+        deliveryDateWarning.classList.toggle("d-none", !show);
+      };
 
       var deliveryDayTouched = false;
       if (recurringDeliveryDay) {
@@ -186,10 +204,16 @@
       };
 
       deliveryDateInput.addEventListener("change", function () {
-        if (deliveryDateInput.value < minDateString) {
-          deliveryDateInput.value = minDateString;
-        }
+        setDateWarning(isBeforeMinimum(deliveryDateInput.value));
         syncRecurringDay();
+      });
+
+      deliveryDateInput.form && deliveryDateInput.form.addEventListener("submit", function (event) {
+        if (isBeforeMinimum(deliveryDateInput.value)) {
+          event.preventDefault();
+          setDateWarning(true);
+          deliveryDateInput.focus();
+        }
       });
 
       syncRecurringDay();

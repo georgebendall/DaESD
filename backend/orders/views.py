@@ -1,6 +1,7 @@
 from collections import OrderedDict
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
+from zoneinfo import ZoneInfo
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -14,6 +15,9 @@ from accounts.models import User
 from payments.models import PaymentTransaction
 from .forms import RecurringOrderForm
 from .models import Cart, Order, ProducerOrder, RecurringOrder, RecurringOrderItem
+
+
+BRISTOL_TIMEZONE = ZoneInfo("Europe/London")
 
 
 def _masked_payment_reference(txn):
@@ -32,6 +36,10 @@ def _parse_delivery_date(raw_value):
         return datetime.strptime(raw_value, "%Y-%m-%d").date()
     except ValueError:
         return None
+
+
+def _minimum_delivery_date():
+    return timezone.now().astimezone(BRISTOL_TIMEZONE).date() + timedelta(days=2)
 
 
 def _producer_display_name(producer):
@@ -72,8 +80,9 @@ def _quantity_with_unit(quantity, product):
 
 def _stock_error_message(product):
     return (
-        f"Only {_quantity_with_unit(product.stock, product)} available "
-        f"from {_producer_display_name(product.producer)}."
+        f"The quantity requested is not available. "
+        f"Only {_format_decimal_quantity(product.stock)} left in stock "
+        f"for {_producer_display_name(product.producer)}."
     )
 
 
@@ -179,9 +188,18 @@ def order_history_page(request):
 
    
     for o in orders:
+        producer_orders = list(o.producer_orders.select_related("producer", "producer__producer_profile"))
         o.producer_names = ", ".join(
-            sorted({it.product.producer.username for it in o.items.all() if it.product_id})
+            sorted({_producer_display_name(it.product.producer) for it in o.items.all() if it.product_id})
         )
+        o.producer_status_entries = [
+            {
+                "name": _producer_display_name(po.producer),
+                "status": po.status,
+                "status_display": po.get_status_display(),
+            }
+            for po in producer_orders
+        ]
 
     producers = (
         User.objects.filter(
@@ -234,6 +252,12 @@ def order_detail_page(request, order_id):
         producer_contacts.append(producer)
 
     producer_sections, _, _ = _group_items_by_producer(order.items.all())
+    producer_order_map = {po.producer_id: po for po in order.producer_orders.select_related("producer")}
+    for section in producer_sections:
+        producer_order = producer_order_map.get(section["producer"].id)
+        section["producer_order"] = producer_order
+        section["producer_status"] = producer_order.status if producer_order else ""
+        section["producer_status_display"] = producer_order.get_status_display() if producer_order else "Pending"
 
     return render(
         request,
@@ -507,6 +531,11 @@ def checkout_now(request):
     )
     customer_profile = getattr(request.user, "customer_profile", None)
     default_delivery_address = _build_delivery_address(customer_profile)
+    commission_total = (cart.subtotal * Decimal("0.05")).quantize(Decimal("0.01"))
+    order_total = (cart.subtotal + commission_total).quantize(Decimal("0.01"))
+    minimum_delivery_date = _minimum_delivery_date()
+    minimum_delivery_date_str = minimum_delivery_date.isoformat()
+    minimum_delivery_date_label = minimum_delivery_date.strftime("%d %b %Y")
 
     if request.method == "GET":
         return render(
@@ -520,6 +549,10 @@ def checkout_now(request):
                 "default_delivery_address": default_delivery_address,
                 "total_food_miles": total_food_miles,
                 "has_food_miles": has_food_miles,
+                "commission_total": commission_total,
+                "order_total": order_total,
+                "minimum_delivery_date": minimum_delivery_date_str,
+                "minimum_delivery_date_label": minimum_delivery_date_label,
             },
         )
 
@@ -540,6 +573,9 @@ def checkout_now(request):
     delivery_date = _parse_delivery_date(raw_delivery_date)
     if raw_delivery_date and not delivery_date:
         messages.error(request, "Please choose a valid delivery date.")
+        return redirect("checkout_now")
+    if delivery_date and delivery_date < minimum_delivery_date:
+        messages.error(request, "Please choose a delivery date at least 48 hours from today.")
         return redirect("checkout_now")
 
     if (
@@ -796,9 +832,10 @@ def update_producer_order_status(request, producer_order_id):
     order = get_object_or_404(ProducerOrder, id=producer_order_id, producer=request.user)
     
     new_status = request.POST.get("status")
-    if new_status in [ProducerOrder.Status.ACCEPTED, ProducerOrder.Status.DECLINED]:
+    if new_status in [ProducerOrder.Status.ACCEPTED, ProducerOrder.Status.CANCELLED]:
         order.status = new_status
         order.save()
-        messages.success(request, f"Order #{str(order.id)[:8]} has been {new_status}.")
+        label = "accepted" if new_status == ProducerOrder.Status.ACCEPTED else "declined"
+        messages.success(request, f"Order #{order.id} has been {label}.")
     
     return redirect("producer_orders")

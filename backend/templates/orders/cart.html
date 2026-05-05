@@ -67,7 +67,7 @@
                       <td>
                         <form method="post" action="{% url 'cart_update' item.id %}" class="cart-quantity-form" data-stock-form novalidate>
                           {% csrf_token %}
-                          <input type="number" name="quantity" value="{{ item.quantity }}" min="1" step="1" class="form-control" aria-label="Quantity for {{ item.product.name }}" data-stock-input data-stock-max="{{ item.product.stock|floatformat:0 }}" data-product-name="{{ item.product.name }}" data-stock-label="{{ item.product.stock|floatformat:0 }} {{ item.product.unit_label }}">
+                          <input type="number" name="quantity" value="{{ item.quantity }}" min="1" step="1" class="form-control" aria-label="Quantity for {{ item.product.name }}" data-stock-input data-stock-max="{{ item.product.stock|floatformat:0 }}" data-product-name="{{ item.product.name }}" data-stock-label="{{ item.product.stock|floatformat:0 }}">
                           <button type="submit" class="btn btn-outline-secondary btn-sm">Update</button>
                         </form>
                         <div class="small text-soft mt-1">{{ item.quantity_display }}</div>
@@ -75,7 +75,11 @@
                       <td>{{ item.unit_label }}</td>
                       <td>
                         {% if item.food_miles is not None %}
-                          <span class="badge text-bg-info">{{ item.food_miles }} miles</span>
+                          {% if item.food_miles < 1 %}
+                            <span class="badge text-bg-info">Under 1 mile</span>
+                          {% else %}
+                            <span class="badge text-bg-info">{{ item.food_miles }} miles</span>
+                          {% endif %}
                         {% else %}
                           <span class="text-soft">Unavailable</span>
                         {% endif %}
@@ -106,7 +110,13 @@
           {% if has_food_miles %}
             <div class="summary-row">
               <span>Total food miles</span>
-              <strong>{{ total_food_miles }} miles</strong>
+              <strong>
+                {% if total_food_miles < 1 %}
+                  Under 1 mile
+                {% else %}
+                  {{ total_food_miles }} miles
+                {% endif %}
+              </strong>
             </div>
           {% endif %}
 

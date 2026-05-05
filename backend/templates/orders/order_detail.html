@@ -26,6 +26,11 @@
             </div>
           </div>
           <div class="text-end">
+            <div class="mb-2">
+              <span class="badge {% if section.producer_status == 'completed' %}bg-success{% elif section.producer_status == 'accepted' or section.producer_status == 'dispatched' %}bg-info{% elif section.producer_status == 'cancelled' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                Producer status: {{ section.producer_status_display }}
+              </span>
+            </div>
             <div class="detail-label">Producer subtotal</div>
             <div class="fw-semibold">£{{ section.subtotal|floatformat:2 }}</div>
           </div>
@@ -149,7 +154,7 @@
       {% if order.status == "paid" %}
         <span class="badge bg-success">Paid</span>
       {% elif order.status == "pending" %}
-        <span class="badge bg-warning">Pending</span>
+        <span class="badge bg-warning text-dark">Pending</span>
       {% elif order.status == "processing" %}
         <span class="badge bg-info">Processing</span>
       {% elif order.status == "completed" %}

@@ -936,9 +936,7 @@ label {
 
 .stock-validation-popup {
   position: absolute;
-  left: 0;
-  top: calc(100% + 0.55rem);
-  z-index: 30;
+  z-index: 1200;
   min-width: 260px;
   max-width: 320px;
   padding: 0.75rem 0.9rem;
@@ -1040,6 +1038,27 @@ label {
 .toast-body {
   color: var(--muted);
   font-size: 0.95rem;
+}
+
+.producer-status-list {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.producer-status-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-warm);
+}
+
+.producer-status-name {
+  font-weight: 600;
+  color: var(--text);
 }
 
 .admin-header-actions {

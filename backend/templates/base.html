@@ -132,6 +132,18 @@
           return Number.isFinite(rawValue) ? rawValue : null;
         };
 
+        var positionPopup = function () {
+          if (!popup) return;
+          var formRect = form.getBoundingClientRect();
+          var popupRect = popup.getBoundingClientRect();
+          var left = formRect.left + window.scrollX;
+          var top = formRect.bottom + window.scrollY + 10;
+          var maxLeft = window.scrollX + window.innerWidth - popupRect.width - 16;
+
+          popup.style.left = Math.max(16 + window.scrollX, Math.min(left, maxLeft)) + "px";
+          popup.style.top = top + "px";
+        };
+
         var showPopup = function () {
           removePopup();
 
@@ -141,11 +153,12 @@
           popup.setAttribute("role", "alert");
           popup.innerHTML =
             "<strong>Quantity not available</strong>" +
-            "The quantity you selected is not currently in stock. Only " +
+            "The quantity you selected is not available. Only " +
             stockLabel +
-            " available for this product.";
+            " left in stock for this product.";
 
-          form.appendChild(popup);
+          document.body.appendChild(popup);
+          positionPopup();
           popupTimer = window.setTimeout(removePopup, 5000);
         };
 
@@ -159,7 +172,6 @@
           }
 
           if (value > max) {
-            input.value = String(max);
             if (showMessage) {
               showPopup();
             }
@@ -181,6 +193,9 @@
         input.addEventListener("change", function () {
           enforceLimit(true);
         });
+
+        window.addEventListener("resize", positionPopup);
+        window.addEventListener("scroll", positionPopup, true);
 
         form.addEventListener("submit", function (event) {
           if (!enforceLimit(true)) {

@@ -50,6 +50,7 @@
               <th>Order</th>
               <th>Date</th>
               <th>Producers</th>
+              <th>Producer Status</th>
               <th>Status</th>
               <th>Total</th>
               <th class="text-end">Actions</th>
@@ -61,6 +62,20 @@
                 <td>#{{ o.id }}</td>
                 <td>{{ o.created_at|date:"Y-m-d H:i" }}</td>
                 <td>{{ o.producer_names }}</td>
+                <td>
+                  <div class="producer-status-list">
+                    {% for entry in o.producer_status_entries %}
+                      <div class="producer-status-item">
+                        <span class="producer-status-name">{{ entry.name }}</span>
+                        <span class="badge {% if entry.status == 'completed' %}bg-success{% elif entry.status == 'accepted' or entry.status == 'dispatched' %}bg-info{% elif entry.status == 'cancelled' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                          {{ entry.status_display }}
+                        </span>
+                      </div>
+                    {% empty %}
+                      <span class="text-soft small">Pending</span>
+                    {% endfor %}
+                  </div>
+                </td>
                 <td>{{ o.get_status_display }}</td>
                 <td>£{{ o.total }}</td>
                 <td class="text-end">

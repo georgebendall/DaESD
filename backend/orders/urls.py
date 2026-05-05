@@ -39,7 +39,5 @@ urlpatterns = [
     
     path("producer/orders/", producer_orders_page, name="producer_orders"),
     path("producer/<int:producer_order_id>/", producer_order_detail_page, name="producer_order_detail"),
-    path("producer/orders/", views.producer_orders_page, name="producer_orders"),
-    path("producer/orders/<str:producer_order_id>/", views.producer_order_detail_page, name="producer_order_detail"),
-    path("producer/orders/<str:producer_order_id>/update/", views.update_producer_order_status, name="update_producer_order_status"),
+    path("producer/orders/<int:producer_order_id>/update/", views.update_producer_order_status, name="update_producer_order_status"),
 ]

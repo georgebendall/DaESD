@@ -29,7 +29,8 @@
           <h2 class="section-title mb-3">Product overview</h2>
           <div class="detail-data">
             <div class="detail-value">{{ product.description|default:"Fresh local produce ready to order." }}</div>
-            <div class="detail-value text-soft">Stock available: {{ product.stock }} {{ product.unit_label }}</div>
+            <div class="detail-value text-soft">Sold in: {{ product.unit_label }}</div>
+            <div class="detail-value text-soft">Available stock: {{ product.stock|floatformat:0 }} left</div>
           </div>
         </div>
 
@@ -54,7 +55,11 @@
           <h2 class="section-title mb-3">Environmental impact</h2>
           {% if food_miles is not None %}
             <div class="alert alert-info mb-0">
-              This product is approximately <strong>{{ food_miles }} food miles</strong> from your delivery postcode.
+              {% if food_miles < 1 %}
+                This product is approximately <strong>under 1 mile</strong> from your delivery postcode.
+              {% else %}
+                This product is approximately <strong>{{ food_miles }} food miles</strong> from your delivery postcode.
+              {% endif %}
             </div>
           {% else %}
             {% if customer_postcode_missing %}
@@ -79,17 +84,52 @@
           {% endif %}
         </div>
       </div>
-      <h3>Reviews</h3>
+      <div class="detail-block">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+          <h2 class="section-title mb-0">Customer reviews</h2>
+          {% if average_rating %}
+            <div class="small text-soft">Average rating: {{ average_rating }}/5 from {{ review_count }} review{{ review_count|pluralize }}</div>
+          {% endif %}
+        </div>
 
-{% for review in product.reviews.all %}
-    <div>
-        <strong>{{ review.rating }} ⭐</strong>
-        <p>{{ review.title }}</p>
-        <p>{{ review.text }}</p>
-    </div>
-{% empty %}
-    <p>No reviews yet</p>
-{% endfor %}
+        {% if can_review %}
+          <form method="post" action="{% url 'product_review_create' product.id %}" class="section-card surface-tile mb-4">
+            {% csrf_token %}
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label" for="{{ review_form.rating.id_for_label }}">Rating</label>
+                {{ review_form.rating }}
+              </div>
+              <div class="col-12">
+                <label class="form-label" for="{{ review_form.comment.id_for_label }}">Review</label>
+                {{ review_form.comment }}
+              </div>
+            </div>
+            <div class="d-flex justify-content-end mt-3">
+              <button type="submit" class="btn btn-primary">Submit Review</button>
+            </div>
+          </form>
+        {% elif existing_review %}
+          <div class="alert alert-info mb-4">You have already reviewed this product.</div>
+        {% elif request.user.is_authenticated and request.user.is_customer_user %}
+          <div class="alert alert-info mb-4">You can review this product after you have paid and the producer has accepted the order.</div>
+        {% endif %}
+
+        <div class="detail-data">
+          {% for review in product.reviews.all %}
+            <div class="section-card surface-tile">
+              <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                <strong>{{ review.reviewer.username }}</strong>
+                <span class="badge text-bg-warning">{{ review.rating }}/5</span>
+              </div>
+              <div class="small text-soft mb-2">{{ review.created_at|date:"d M Y" }}</div>
+              <p class="mb-0">{{ review.comment|default:"No written comment provided." }}</p>
+            </div>
+          {% empty %}
+            <p class="text-soft mb-0">No reviews yet.</p>
+          {% endfor %}
+        </div>
+      </div>
     </section>
 
     <aside class="product-detail-side">
@@ -121,7 +161,7 @@
 
       <div class="detail-block">
         <div class="detail-label">Stock</div>
-        <div class="detail-value">{{ product.stock }} {{ product.unit_label }}</div>
+        <div class="detail-value">{{ product.stock|floatformat:0 }} left</div>
       </div>
 
       {% if request.user.is_authenticated and request.user.is_customer_user %}
@@ -130,7 +170,7 @@
             <form method="POST" action="{% url 'cart_add' product.id %}" class="detail-cta-form" data-stock-form novalidate>
               {% csrf_token %}
               <input type="hidden" name="next" value="{{ request.get_full_path }}">
-              <input type="number" name="quantity" value="1" min="1" step="1" class="form-control" aria-label="Quantity for {{ product.name }}" data-stock-input data-stock-max="{{ product.stock|floatformat:0 }}" data-product-name="{{ product.name }}" data-stock-label="{{ product.stock|floatformat:0 }} {{ product.unit_label }}">
+              <input type="number" name="quantity" value="1" min="1" step="1" class="form-control" aria-label="Quantity for {{ product.name }}" data-stock-input data-stock-max="{{ product.stock|floatformat:0 }}" data-product-name="{{ product.name }}" data-stock-label="{{ product.stock|floatformat:0 }}">
               <button type="submit" class="btn btn-success">Add to cart</button>
             </form>
             <div class="small text-soft mt-2">Enter quantity in {{ product.unit_label }}.</div>

@@ -17,6 +17,18 @@
     </div>
   </div>
 
+  <div class="section-card dashboard-section mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div>
+        <h2 class="section-title mb-1">Reporting Overview</h2>
+        <p class="page-subtitle mb-0">Use this report to review producer settlements, commission retained by BRFN, and the latest successful payment records.</p>
+      </div>
+      <div class="small text-soft">
+        Export available as CSV for handover, finance checks, or admin review.
+      </div>
+    </div>
+  </div>
+
   <div class="row g-4 mb-4">
     <div class="col-md-4">
       <div class="section-card metric-card h-100">
@@ -68,7 +80,11 @@
                 <td>£{{ row.gross_sales|floatformat:2 }}</td>
                 <td>£{{ row.commission_total|floatformat:2 }}</td>
                 <td class="fw-semibold">£{{ row.payout_total|floatformat:2 }}</td>
-                <td>{{ row.status }}</td>
+                <td>
+                  <span class="badge {% if row.status == 'Paid' %}bg-success{% elif row.status == 'Final' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                    {{ row.status }}
+                  </span>
+                </td>
               </tr>
             {% endfor %}
           </tbody>
@@ -100,7 +116,11 @@
                 <td>#{{ txn.order.id }}</td>
                 <td>{{ txn.order.customer.username }}</td>
                 <td>{{ txn.provider }}</td>
-                <td>{{ txn.get_status_display }}</td>
+                <td>
+                  <span class="badge {% if txn.status == 'succeeded' %}bg-success{% elif txn.status == 'pending' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                    {{ txn.get_status_display }}
+                  </span>
+                </td>
                 <td>£{{ txn.amount|floatformat:2 }}</td>
                 <td>{{ txn.provider_reference|default:"Not available" }}</td>
               </tr>
