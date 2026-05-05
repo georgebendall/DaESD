@@ -103,6 +103,106 @@
 
         setTimeout(removeToast, 8000);
       });
+
+      document.querySelectorAll("[data-stock-form]").forEach(function (form) {
+        var input = form.querySelector("[data-stock-input]");
+        if (!input) return;
+
+        var popup = null;
+        var popupTimer = null;
+
+        var removePopup = function () {
+          if (popupTimer) {
+            clearTimeout(popupTimer);
+            popupTimer = null;
+          }
+          if (popup) {
+            popup.remove();
+            popup = null;
+          }
+        };
+
+        var maxValue = function () {
+          var rawMax = parseInt(input.dataset.stockMax || "", 10);
+          return Number.isFinite(rawMax) ? rawMax : null;
+        };
+
+        var currentValue = function () {
+          var rawValue = parseInt(input.value || "", 10);
+          return Number.isFinite(rawValue) ? rawValue : null;
+        };
+
+        var positionPopup = function () {
+          if (!popup) return;
+          var formRect = form.getBoundingClientRect();
+          var popupRect = popup.getBoundingClientRect();
+          var left = formRect.left + window.scrollX;
+          var top = formRect.bottom + window.scrollY + 10;
+          var maxLeft = window.scrollX + window.innerWidth - popupRect.width - 16;
+
+          popup.style.left = Math.max(16 + window.scrollX, Math.min(left, maxLeft)) + "px";
+          popup.style.top = top + "px";
+        };
+
+        var showPopup = function () {
+          removePopup();
+
+          var stockLabel = input.dataset.stockLabel || "current stock";
+          popup = document.createElement("div");
+          popup.className = "stock-validation-popup";
+          popup.setAttribute("role", "alert");
+          popup.innerHTML =
+            "<strong>Quantity not available</strong>" +
+            "The quantity you selected is not available. Only " +
+            stockLabel +
+            " left in stock for this product.";
+
+          document.body.appendChild(popup);
+          positionPopup();
+          popupTimer = window.setTimeout(removePopup, 5000);
+        };
+
+        var enforceLimit = function (showMessage) {
+          var max = maxValue();
+          var value = currentValue();
+
+          if (max === null || value === null) {
+            removePopup();
+            return true;
+          }
+
+          if (value > max) {
+            if (showMessage) {
+              showPopup();
+            }
+            return false;
+          }
+
+          if (value < 1) {
+            input.value = "1";
+          }
+
+          removePopup();
+          return true;
+        };
+
+        input.addEventListener("input", function () {
+          removePopup();
+        });
+
+        input.addEventListener("change", function () {
+          enforceLimit(true);
+        });
+
+        window.addEventListener("resize", positionPopup);
+        window.addEventListener("scroll", positionPopup, true);
+
+        form.addEventListener("submit", function (event) {
+          if (!enforceLimit(true)) {
+            event.preventDefault();
+          }
+        });
+      });
     </script>
     {% block extra_js %}{% endblock %}
   </body>

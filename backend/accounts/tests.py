@@ -253,3 +253,36 @@ class RoleAuthenticationTests(TestCase):
 
         self.assertContains(blocked, "Too many failed login attempts")
         self.assertFalse("_auth_user_id" in self.client.session)
+
+    def test_login_lockout_only_applies_to_the_same_username(self):
+        User.objects.create_user(
+            username="lockeduser",
+            email="locked@example.com",
+            password="StrongPass123!",
+            role=User.Role.CUSTOMER,
+        )
+        User.objects.create_user(
+            username="otheruser",
+            email="other@example.com",
+            password="StrongPass123!",
+            role=User.Role.CUSTOMER,
+        )
+
+        for _ in range(5):
+            response = self.client.post(
+                reverse("login"),
+                {"username": "lockeduser", "password": "wrong-password"},
+            )
+            self.assertEqual(response.status_code, 200)
+
+        blocked_same_user = self.client.post(
+            reverse("login"),
+            {"username": "lockeduser", "password": "StrongPass123!"},
+        )
+        self.assertContains(blocked_same_user, "Too many failed login attempts")
+
+        other_user_response = self.client.post(
+            reverse("login"),
+            {"username": "otheruser", "password": "StrongPass123!"},
+        )
+        self.assertEqual(other_user_response.status_code, 302)

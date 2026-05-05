@@ -3,6 +3,10 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 
+from orders.models import Order, OrderItem, ProducerOrder
+from reviews.forms import ReviewForm
+from reviews.models import Review
+
 from .models import Allergen, Category, Product, calculate_food_miles
 
 
@@ -197,6 +201,19 @@ def product_detail_page(request, product_id):
 
     food_miles = None
     customer_postcode_missing = False
+    can_review = False
+    existing_review = None
+    review_form = None
+    average_rating = None
+
+    review_qs = product.reviews.select_related("reviewer")
+    review_count = review_qs.count()
+    if review_count:
+        average_rating = round(
+            sum(review.rating for review in review_qs) / review_count,
+            1,
+        )
+
     if request.user.is_authenticated and getattr(request.user, "role", "") == "customer":
         customer_postcode_missing = not getattr(
             getattr(request.user, "customer_profile", None),
@@ -204,6 +221,21 @@ def product_detail_page(request, product_id):
             "",
         ).strip()
         food_miles = product.food_miles_for_customer(request.user)
+        existing_review = Review.objects.filter(product=product, reviewer=request.user).first()
+        has_completed_purchase = OrderItem.objects.filter(
+            order__customer=request.user,
+            order__status__in=[Order.Status.PAID, Order.Status.COMPLETED],
+            order__producer_orders__producer=product.producer,
+            order__producer_orders__status__in=[
+                ProducerOrder.Status.ACCEPTED,
+                ProducerOrder.Status.DISPATCHED,
+                ProducerOrder.Status.COMPLETED,
+            ],
+            product=product,
+        ).exists()
+        can_review = has_completed_purchase and existing_review is None
+        if can_review:
+            review_form = ReviewForm()
 
     return render(
         request,
@@ -212,5 +244,10 @@ def product_detail_page(request, product_id):
             "product": product,
             "food_miles": food_miles,
             "customer_postcode_missing": customer_postcode_missing,
+            "can_review": can_review,
+            "existing_review": existing_review,
+            "review_form": review_form,
+            "average_rating": average_rating,
+            "review_count": review_count,
         },
     )

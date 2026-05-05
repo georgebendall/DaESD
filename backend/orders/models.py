@@ -106,11 +106,6 @@ class OrderItem(models.Model):
         validators=[MinValueValidator(0)],
         help_text="Snapshot of the product price at purchase time.",
     )
-    def save(self, *args, **kwargs):
-        is_new = self.pk is None
-        super().save(*args, **kwargs)
-        if is_new:
-             self.product.reduce_stock(self.quantity)
 
     @property
     def producer(self):

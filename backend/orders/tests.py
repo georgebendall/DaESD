@@ -8,7 +8,11 @@ from accounts.models import CustomerProfile, ProducerProfile, User
 from catalog.models import Category, Product
 from payments.models import PaymentTransaction
 
-from .models import Cart, CartItem, Order, OrderItem, RecurringOrder
+from .models import Cart, CartItem, Order, OrderItem, ProducerOrder, RecurringOrder
+
+
+def _future_date(days=5):
+    return timezone.localdate() + timezone.timedelta(days=days)
 
 
 class OrderHistoryTests(TestCase):
@@ -187,12 +191,13 @@ class BusinessOrderFlowsTests(TestCase):
         self.assertContains(review, "50 kg")
         self.assertContains(review, "30 litres")
         self.assertContains(review, "20 kg")
+        self.assertContains(review, "Network commission (5%)")
 
         response = self.client.post(
             reverse("checkout_now"),
             {
                 "delivery_address": "St. Mary's School\nSchool Lane\nBS3 2AA",
-                "delivery_date": "2026-05-10",
+                "delivery_date": (_future_date(5)).isoformat(),
                 "special_instructions": "Delivery to kitchen entrance, contact kitchen manager",
             },
         )
@@ -217,7 +222,7 @@ class BusinessOrderFlowsTests(TestCase):
             reverse("checkout_now"),
             {
                 "delivery_address": "44 Clifton Road\nBS6 5QA",
-                "delivery_date": "2026-05-12",
+                "delivery_date": (_future_date(5)).isoformat(),
                 "make_recurring": "on",
                 "recurring_name": "Weekly Ingredients",
                 "recurrence": "weekly",
@@ -234,6 +239,24 @@ class BusinessOrderFlowsTests(TestCase):
         recurring_page = self.client.get(reverse("recurring_orders"))
         self.assertContains(recurring_page, "Weekly Ingredients")
         self.assertContains(recurring_page, "Active")
+
+    def test_checkout_rejects_delivery_date_inside_48_hour_lead_time(self):
+        cart = Cart.objects.create(customer=self.community_user)
+        CartItem.objects.create(cart=cart, product=self.potatoes, quantity=5)
+
+        self.client.force_login(self.community_user)
+        response = self.client.post(
+            reverse("checkout_now"),
+            {
+                "delivery_address": "St. Mary's School\nSchool Lane\nBS3 2AA",
+                "delivery_date": timezone.localdate().isoformat(),
+                "special_instructions": "",
+            },
+            follow=True,
+        )
+
+        self.assertContains(response, "Please choose a delivery date at least 48 hours from today.")
+        self.assertEqual(Order.objects.count(), 0)
 
     def test_recurring_order_can_be_loaded_into_cart_without_changing_template(self):
         recurring = RecurringOrder.objects.create(
@@ -289,6 +312,46 @@ class BusinessOrderFlowsTests(TestCase):
         recurring.refresh_from_db()
         self.assertEqual(recurring.status, RecurringOrder.Status.CANCELLED)
 
+    def test_producer_can_accept_and_decline_sub_orders(self):
+        order = Order.objects.create(
+            customer=self.community_user,
+            status=Order.Status.PENDING,
+            delivery_date=_future_date(5),
+        )
+        OrderItem.objects.create(order=order, product=self.potatoes, quantity=4, unit_price=self.potatoes.price)
+        producer_order = ProducerOrder.objects.create(
+            parent_order=order,
+            producer=self.producer1,
+            status=ProducerOrder.Status.PENDING,
+        )
+        producer_order.recalculate_subtotal()
+        producer_order.save()
+
+        self.client.force_login(self.producer1)
+        orders_page = self.client.get(reverse("producer_orders"))
+        self.assertContains(orders_page, "Accept")
+        self.assertContains(orders_page, "Decline")
+
+        accept_response = self.client.post(
+            reverse("update_producer_order_status", args=[producer_order.id]),
+            {"status": "accepted"},
+            follow=True,
+        )
+        self.assertContains(accept_response, "has been accepted")
+        producer_order.refresh_from_db()
+        self.assertEqual(producer_order.status, ProducerOrder.Status.ACCEPTED)
+
+        producer_order.status = ProducerOrder.Status.PENDING
+        producer_order.save()
+        decline_response = self.client.post(
+            reverse("update_producer_order_status", args=[producer_order.id]),
+            {"status": "cancelled"},
+            follow=True,
+        )
+        self.assertContains(decline_response, "has been declined")
+        producer_order.refresh_from_db()
+        self.assertEqual(producer_order.status, ProducerOrder.Status.CANCELLED)
+
     def test_bulk_cart_groups_items_by_producer_and_shows_names(self):
         cart = Cart.objects.create(customer=self.community_user)
         CartItem.objects.create(cart=cart, product=self.potatoes, quantity=50)
@@ -305,7 +368,7 @@ class BusinessOrderFlowsTests(TestCase):
         self.assertContains(response, "30 litres")
         self.assertContains(response, "20 kg")
 
-    def test_cart_add_rejects_quantity_above_stock_with_unit_and_producer_message(self):
+    def test_cart_add_rejects_quantity_above_stock_with_left_in_stock_message(self):
         self.client.force_login(self.community_user)
         response = self.client.post(
             reverse("cart_add", args=[self.potatoes.id]),
@@ -313,7 +376,7 @@ class BusinessOrderFlowsTests(TestCase):
             follow=True,
         )
 
-        self.assertContains(response, "Only 100 kg available from Farm One.")
+        self.assertContains(response, "The quantity requested is not available. Only 100 left in stock for Farm One.")
 
     def test_surplus_discounted_price_is_used_in_cart(self):
         cart = Cart.objects.create(customer=self.restaurant_user)
@@ -324,3 +387,21 @@ class BusinessOrderFlowsTests(TestCase):
 
         self.assertContains(response, "£2.10")
         self.assertContains(response, "Lettuce")
+
+    def test_payment_page_marks_order_paid_and_records_transaction(self):
+        order = Order.objects.create(
+            customer=self.community_user,
+            status=Order.Status.PENDING,
+            subtotal=Decimal("20.00"),
+            commission_total=Decimal("1.00"),
+            total=Decimal("21.00"),
+            delivery_date=_future_date(5),
+        )
+
+        self.client.force_login(self.community_user)
+        response = self.client.post(reverse("payment_page", args=[order.id]), follow=True)
+
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.Status.PAID)
+        self.assertTrue(PaymentTransaction.objects.filter(order=order, amount=Decimal("21.00")).exists())
+        self.assertContains(response, "Payment completed successfully.")

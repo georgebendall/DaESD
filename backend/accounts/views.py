@@ -26,9 +26,13 @@ class BrfnLoginView(LoginView):
     lockout_attempt_limit = 5
     lockout_window = timedelta(minutes=10)
 
+    def _session_username_key(self):
+        return (self.request.POST.get("username", "") or "").strip().lower()
+
     def _lockout_remaining_seconds(self):
         lockout_until = self.request.session.get("login_lockout_until")
-        if not lockout_until:
+        locked_username = self.request.session.get("login_lockout_username")
+        if not lockout_until or locked_username != self._session_username_key():
             return 0
 
         remaining = int(lockout_until - timezone.now().timestamp())
@@ -50,6 +54,8 @@ class BrfnLoginView(LoginView):
     def form_valid(self, form):
         self.request.session.pop("login_failed_attempts", None)
         self.request.session.pop("login_lockout_until", None)
+        self.request.session.pop("login_failed_username", None)
+        self.request.session.pop("login_lockout_username", None)
 
         response = super().form_valid(form)
         if form.cleaned_data.get("remember_me"):
@@ -61,10 +67,17 @@ class BrfnLoginView(LoginView):
         return response
 
     def form_invalid(self, form):
+        username_key = self._session_username_key()
+        previous_username = self.request.session.get("login_failed_username")
+        if previous_username != username_key:
+            self.request.session["login_failed_attempts"] = 0
+        self.request.session["login_failed_username"] = username_key
+
         attempts = int(self.request.session.get("login_failed_attempts", 0)) + 1
         self.request.session["login_failed_attempts"] = attempts
 
         if attempts >= self.lockout_attempt_limit:
+            self.request.session["login_lockout_username"] = username_key
             self.request.session["login_lockout_until"] = (
                 timezone.now() + self.lockout_window
             ).timestamp()
