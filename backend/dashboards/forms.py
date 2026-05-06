@@ -46,6 +46,7 @@ class ProducerProductForm(forms.ModelForm):
             "name",
             "category",
             "description",
+            "image",
             "unit",
             "price",
             "stock",
@@ -63,6 +64,7 @@ class ProducerProductForm(forms.ModelForm):
             "name": forms.TextInput(attrs={"class": "form-control"}),
             "category": forms.Select(attrs={"class": "form-select"}),
             "description": forms.Textarea(attrs={"class": "form-control", "rows": 4}),
+            "image": forms.ClearableFileInput(attrs={"class": "form-control"}),
             "unit": forms.Select(attrs={"class": "form-select"}),
             "price": forms.NumberInput(attrs={"class": "form-control", "step": "0.01", "min": "0"}),
             "stock": forms.NumberInput(attrs={"class": "form-control", "min": "0"}),
@@ -83,6 +85,7 @@ class ProducerProductForm(forms.ModelForm):
         # ✅ Populate dropdowns
         self.fields["category"].queryset = Category.objects.order_by("name")
         self.fields["allergens"].queryset = Allergen.objects.order_by("name")
+        self.fields["surplus_discount_percent"].required = False
 
         # ✅ CRITICAL: set producer BEFORE validation happens
         # so Product.clean() doesn't crash

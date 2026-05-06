@@ -7,6 +7,7 @@ import csv
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db.models import ProtectedError
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -456,16 +457,17 @@ def admin_finance_report(request):
     )
 
 @login_required
-def customer_dashboard(request):
+def my_orders_page(request):
     
     if getattr(request.user, "role", "") != User.Role.CUSTOMER:
         return redirect("after_login")
 
-    products_count = Product.objects.filter(is_active=True).count()
-
     my_orders_qs = Order.objects.filter(customer=request.user).order_by("-created_at")
     my_orders_count = my_orders_qs.count()
     recent_orders = my_orders_qs[:5]
+    recent_completed_orders = my_orders_qs.filter(status=Order.Status.COMPLETED).count()
+    recent_pending_orders = my_orders_qs.exclude(status=Order.Status.COMPLETED).count()
+    recurring_orders_count = request.user.recurring_orders.count()
 
     
     cart_items = 0
@@ -481,12 +483,14 @@ def customer_dashboard(request):
         cart_items = 0
 
     context = {
-        "products_count": products_count,
         "my_orders_count": my_orders_count,
+        "completed_orders_count": recent_completed_orders,
+        "pending_orders_count": recent_pending_orders,
         "cart_items": cart_items,
+        "recurring_orders_count": recurring_orders_count,
         "recent_orders": recent_orders,
     }
-    return render(request, "dashboards/customer_dashboard.html", context)
+    return render(request, "orders/my_orders.html", context)
 
 def _producer_only_or_redirect(request):
     if not request.user.is_authenticated:
@@ -501,30 +505,7 @@ def producer_dashboard(request):
     redirect_response = _producer_only_or_redirect(request)
     if redirect_response:
         return redirect_response
-
-    products_qs = (
-        Product.objects.filter(producer=request.user)
-        .select_related("category")
-        .order_by("-updated_at")
-    )
-
-    low_stock_products = [p for p in products_qs if p.is_low_stock]
-    settlement_data = _producer_settlement_data(request.user)
-    pending_orders_count = ProducerOrder.objects.filter(
-        producer=request.user,
-        status=ProducerOrder.Status.PENDING,
-    ).count()
-
-    context = {
-        "products_count": products_qs.count(),
-        "active_products_count": products_qs.filter(is_active=True).count(),
-        "low_stock_count": len(low_stock_products),
-        "low_stock_products": low_stock_products[:5],
-        "recent_products": products_qs[:5],
-        "latest_settlement": settlement_data["latest_summary"],
-        "pending_orders_count": pending_orders_count,
-    }
-    return render(request, "dashboards/producer_dashboard.html", context)
+    return redirect("producer_orders")
 
 
 @login_required
@@ -537,7 +518,17 @@ def producer_order_notifications(request):
         producer=request.user,
         status=ProducerOrder.Status.PENDING,
     ).count()
-    return JsonResponse({"pending_orders_count": pending_orders_count})
+    producer_products = Product.objects.filter(producer=request.user).only(
+        "stock",
+        "stock_warning_level",
+    )
+    low_stock_count = sum(1 for product in producer_products if product.is_low_stock)
+    return JsonResponse(
+        {
+            "pending_orders_count": pending_orders_count,
+            "low_stock_count": low_stock_count,
+        }
+    )
 
 
 @login_required
@@ -602,18 +593,23 @@ def producer_stock(request):
     if redirect_response:
         return redirect_response
 
-    products = (
+    low_stock_only = request.GET.get("low_stock") == "1"
+
+    products_qs = (
         Product.objects.filter(producer=request.user)
         .select_related("category")
         .order_by("name")
     )
+    products_all = list(products_qs)
+    products = [product for product in products_all if product.is_low_stock] if low_stock_only else products_all
     return render(
         request,
         "dashboards/stock.html",
         {
             "products": products,
-            "products_count": products.count(),
-            "low_stock_count": len([p for p in products if p.is_low_stock]),
+            "products_count": len(products_all),
+            "low_stock_count": len([p for p in products_all if p.is_low_stock]),
+            "low_stock_only": low_stock_only,
         },
     )
 
@@ -630,7 +626,7 @@ def add_product(request):
         return redirect_response
 
     if request.method == "POST":
-        form = ProducerProductForm(request.POST, user=request.user)
+        form = ProducerProductForm(request.POST, request.FILES, user=request.user)
 
         # keep producer safe
         form.instance.producer = request.user
@@ -675,7 +671,7 @@ def edit_product(request, product_id):
     old_availability = product.availability_status
 
     if request.method == "POST":
-        form = ProducerProductForm(request.POST, instance=product, user=request.user)
+        form = ProducerProductForm(request.POST, request.FILES, instance=product, user=request.user)
         form.instance.producer = request.user
 
         if form.is_valid():
@@ -728,9 +724,17 @@ def delete_product(request, product_id):
 
     product = get_object_or_404(Product, id=product_id, producer=request.user)
     product_name = product.name
-    product.delete()
-
-    messages.success(request, f"{product_name} was deleted.")
+    try:
+        product.delete()
+        messages.success(request, f"{product_name} was deleted.")
+    except ProtectedError:
+        product.availability_status = Product.AvailabilityStatus.UNAVAILABLE
+        product.is_active = False
+        product.save(update_fields=["availability_status", "is_active", "updated_at"])
+        messages.info(
+            request,
+            f"{product_name} has existing order history, so it was archived and hidden instead of being deleted.",
+        )
     return redirect("producer_stock")
 
 

@@ -21,7 +21,7 @@ class RoleAuthenticationTests(TestCase):
             },
         )
 
-        self.assertRedirects(response, reverse("customer_dashboard"))
+        self.assertRedirects(response, reverse("my_orders"))
         user = User.objects.get(username="customer1")
         self.assertEqual(user.role, User.Role.CUSTOMER)
         self.assertFalse(user.is_staff)
@@ -44,7 +44,7 @@ class RoleAuthenticationTests(TestCase):
             },
         )
 
-        self.assertRedirects(response, reverse("producer_dashboard"))
+        self.assertRedirects(response, reverse("producer_orders"))
         user = User.objects.get(username="producer1")
         self.assertEqual(user.role, User.Role.PRODUCER)
         self.assertFalse(user.is_staff)
@@ -81,11 +81,11 @@ class RoleAuthenticationTests(TestCase):
         ProducerProfile.objects.create(user=producer, business_name="Producer Two", postcode="BA2 2BB")
 
         self.client.login(username="customer2", password="StrongPass123!")
-        self.assertRedirects(self.client.get(reverse("after_login")), reverse("customer_dashboard"))
+        self.assertRedirects(self.client.get(reverse("after_login")), reverse("my_orders"))
 
         self.client.logout()
         self.client.login(username="producer2", password="StrongPass123!")
-        self.assertRedirects(self.client.get(reverse("after_login")), reverse("producer_dashboard"))
+        self.assertRedirects(self.client.get(reverse("after_login")), reverse("producer_orders"))
 
     def test_wrong_dashboard_access_is_blocked(self):
         customer = User.objects.create_user(
@@ -217,7 +217,7 @@ class RoleAuthenticationTests(TestCase):
             },
         )
 
-        self.assertRedirects(response, reverse("customer_dashboard"))
+        self.assertRedirects(response, reverse("my_orders"))
         profile = CustomerProfile.objects.get(user__username="restaurant1")
         self.assertEqual(profile.account_type, CustomerProfile.AccountType.RESTAURANT)
         self.assertEqual(profile.organisation_name, "The Clifton Kitchen")

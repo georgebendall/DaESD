@@ -31,12 +31,27 @@
                 <a class="nav-link text-soft" href="{% url 'admin_dashboard' %}">Admin Dashboard</a>
                 <a class="nav-link text-soft" href="{% url 'admin_finance_report' %}">Financial Reports</a>
               {% elif request.user.is_producer_user %}
-                <a class="nav-link text-soft" href="{% url 'producer_dashboard' %}">Producer Dashboard</a>
                 <a class="nav-link text-soft" href="{% url 'producer_stock' %}">My Products</a>
+                <a class="nav-link text-soft nav-cart-link" href="{% url 'producer_stock' %}?low_stock=1">
+                  Low Stock
+                  {% if producer_low_stock_count %}
+                    <span class="cart-count-badge" data-producer-low-stock-badge>{{ producer_low_stock_count }}</span>
+                  {% else %}
+                    <span class="cart-count-badge d-none" data-producer-low-stock-badge>0</span>
+                  {% endif %}
+                </a>
+                <a class="nav-link text-soft nav-cart-link producer-orders-button" href="{% url 'producer_orders' %}">
+                  Orders
+                  {% if producer_pending_orders_count %}
+                    <span class="cart-count-badge producer-orders-badge" data-producer-order-badge>{{ producer_pending_orders_count }}</span>
+                  {% else %}
+                    <span class="cart-count-badge producer-orders-badge d-none" data-producer-order-badge>0</span>
+                  {% endif %}
+                </a>
                 <a class="nav-link text-soft" href="{% url 'producer_settlements' %}">Settlements</a>
                 <a class="nav-link text-soft" href="{% url 'add_product' %}">Add Product</a>
               {% elif request.user.is_customer_user %}
-                <a class="nav-link text-soft" href="{% url 'customer_dashboard' %}">Customer Dashboard</a>
+                <a class="nav-link text-soft" href="{% url 'my_orders' %}">My Orders</a>
                 <a class="nav-link text-soft nav-cart-link" href="{% url 'cart_page' %}">
                   Cart
                   {% if cart_item_count %}
@@ -50,7 +65,11 @@
           <div class="d-flex gap-2 align-items-center">
             {% if request.user.is_authenticated %}
               <span class="topbar-user">
-                Hi, {{ request.user.username }}
+                {% if request.user.is_producer_user %}
+                  Hello, {{ request.user.producer_profile.business_name|default:request.user.username }}
+                {% else %}
+                  Hi, {{ request.user.username }}
+                {% endif %}
               </span>
 
               <form method="post" action="{% url 'logout' %}" class="m-0">
@@ -231,6 +250,53 @@
           }
         });
       });
+
+      document.addEventListener("DOMContentLoaded", function () {
+        document.body.classList.add("page-ready");
+      });
+
+      {% if request.user.is_authenticated and request.user.is_producer_user %}
+        (function () {
+          var badges = document.querySelectorAll("[data-producer-order-badge]");
+          var lowStockBadges = document.querySelectorAll("[data-producer-low-stock-badge]");
+
+          function updateBadges(count) {
+            badges.forEach(function (badge) {
+              badge.textContent = count;
+              badge.classList.toggle("d-none", !count);
+            });
+          }
+
+          function updateLowStock(count) {
+            lowStockBadges.forEach(function (badge) {
+              badge.textContent = count;
+              badge.classList.toggle("d-none", !count);
+            });
+          }
+
+          function refreshProducerNotifications() {
+            window.fetch("{% url 'producer_order_notifications' %}", {
+              method: "GET",
+              credentials: "same-origin",
+              headers: { "X-Requested-With": "XMLHttpRequest" }
+            })
+            .then(function (response) { return response.ok ? response.json() : null; })
+            .then(function (data) {
+              if (!data) return;
+              if (typeof data.pending_orders_count === "number") {
+                updateBadges(data.pending_orders_count);
+              }
+              if (typeof data.low_stock_count === "number") {
+                updateLowStock(data.low_stock_count);
+              }
+            })
+            .catch(function () {});
+          }
+
+          refreshProducerNotifications();
+          window.setInterval(refreshProducerNotifications, 30000);
+        })();
+      {% endif %}
     </script>
     {% block extra_js %}{% endblock %}
   </body>

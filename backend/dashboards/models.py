@@ -1,8 +1,9 @@
 from django.db import models
 
-# Create your models here.
 
 class Notification(models.Model):
+    """Simple in-app notification used for low-stock and dashboard activity."""
+
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)

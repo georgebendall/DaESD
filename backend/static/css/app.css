@@ -27,10 +27,33 @@ body {
   color: var(--text);
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
   font-family: "Inter", "Segoe UI", Arial, sans-serif;
   line-height: 1.55;
+}
+
+.site-main {
+  opacity: 1;
+}
+
+body.page-ready .site-main {
+  animation: pageReveal 280ms ease-out both;
+}
+
+@keyframes pageReveal {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 a {
@@ -218,6 +241,16 @@ main.container {
 
 .card {
   overflow: hidden;
+}
+
+.page-header,
+.section-card,
+.surface-tile,
+.card,
+.product-card-modern,
+.payment-card,
+.invoice-shell {
+  transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
 }
 
 .panel,
@@ -658,6 +691,34 @@ label {
   height: 100%;
 }
 
+.product-card-media {
+  aspect-ratio: 4 / 3;
+  background: #ffffff;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.product-card-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  display: block;
+}
+
+.product-card-placeholder,
+.product-detail-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  font-size: 3rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
 .product-card-modern .card-body {
   padding: 1.15rem;
 }
@@ -821,6 +882,43 @@ label {
   padding: 1.4rem;
 }
 
+.customer-orders-overview {
+  padding: 0;
+  overflow: hidden;
+}
+
+.customer-orders-strip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.customer-orders-item {
+  padding: 1.3rem 1.35rem;
+  border-right: 1px solid var(--border);
+  background: linear-gradient(180deg, #ffffff 0%, #fcfdfb 100%);
+}
+
+.customer-orders-item:last-child {
+  border-right: 0;
+}
+
+.customer-orders-label {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.75rem;
+}
+
+.customer-orders-value {
+  color: var(--primary);
+  font-size: clamp(1.7rem, 3vw, 2.3rem);
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
 .recurring-order-box {
   background: var(--surface-soft);
 }
@@ -915,6 +1013,24 @@ label {
   padding: 1.6rem;
 }
 
+.product-image-upload-preview {
+  width: 100%;
+  max-width: 260px;
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.product-image-upload-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  display: block;
+}
+
 .product-detail-side {
   padding: 1.4rem;
   align-self: start;
@@ -925,6 +1041,23 @@ label {
 .detail-stack {
   display: grid;
   gap: 1.25rem;
+}
+
+.product-detail-hero-image {
+  width: 100%;
+  aspect-ratio: 16 / 7;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.product-detail-hero-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  display: block;
 }
 
 .detail-block {
@@ -1226,6 +1359,18 @@ label {
     grid-template-columns: 1fr 1fr;
   }
 
+  .customer-orders-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .customer-orders-item:nth-child(2n) {
+    border-right: 0;
+  }
+
+  .customer-orders-item {
+    border-bottom: 1px solid var(--border);
+  }
+
   .hero-slab,
   .page-header,
   .cart-header-card {
@@ -1251,7 +1396,8 @@ label {
   .form-grid,
   .invoice-grid,
   .admin-metric-grid,
-  .invoice-totals {
+  .invoice-totals,
+  .customer-orders-strip {
     grid-template-columns: 1fr;
   }
 

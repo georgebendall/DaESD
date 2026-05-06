@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Customer Dashboard | BRFN{% endblock %}
+{% block title %}My Orders | BRFN{% endblock %}
 
 {% block content %}
 <div class="page-shell">
@@ -7,39 +7,45 @@
     <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between">
       <div>
         <a class="btn btn-back mb-3" href="/">← Back to Home</a>
-        <span class="eyebrow">Customer Dashboard</span>
-        <h1 class="page-title mt-2">Welcome back, {{ request.user.username }}</h1>
-        <p class="page-subtitle">Check your cart, place new orders, and review recent activity from one simple page.</p>
+        <span class="eyebrow">My Orders</span>
+        <h1 class="page-title mt-2">Orders and account activity</h1>
+        <p class="page-subtitle">Review recent orders, check what still needs attention, and jump back into the store when you are ready to buy again.</p>
       </div>
       <div class="page-actions">
         <a class="btn btn-success" href="/shop/products/">Browse Store</a>
         <a class="btn btn-primary" href="/orders/cart/">View Cart</a>
-        <a class="btn btn-outline-secondary" href="{% url 'order_history' %}">Order History</a>
+        <a class="btn btn-outline-secondary" href="{% url 'order_history' %}">Full Order History</a>
         <a class="btn btn-outline-secondary" href="{% url 'recurring_orders' %}">Recurring Orders</a>
       </div>
     </div>
   </section>
 
-  <section class="row g-4 mb-4">
-    <div class="col-12 col-md-4">
-      <div class="section-card metric-card h-100">
-        <div class="metric-label">Products available</div>
-        <div class="metric-value">{{ products_count }}</div>
-        <div class="small text-soft">Items currently ready to order</div>
+  <section class="section-card customer-orders-overview mb-4">
+    <div class="customer-orders-strip">
+      <div class="customer-orders-item">
+        <div class="customer-orders-label">Open orders</div>
+        <div class="customer-orders-value">{{ pending_orders_count }}</div>
+        <div class="small text-soft">Pending, paid, or processing</div>
       </div>
-    </div>
-    <div class="col-12 col-md-4">
-      <div class="section-card metric-card h-100">
-        <div class="metric-label">Items in your cart</div>
-        <div class="metric-value">{{ cart_items }}</div>
-        <div class="small text-soft">Total quantity waiting for checkout</div>
+      <div class="customer-orders-item">
+        <div class="customer-orders-label">Completed orders</div>
+        <div class="customer-orders-value">{{ completed_orders_count }}</div>
+        <div class="small text-soft">Finished deliveries and fulfilled orders</div>
       </div>
-    </div>
-    <div class="col-12 col-md-4">
-      <div class="section-card metric-card h-100">
-        <div class="metric-label">Orders placed</div>
-        <div class="metric-value">{{ my_orders_count }}</div>
-        <div class="small text-soft">Your completed and pending orders</div>
+      <div class="customer-orders-item">
+        <div class="customer-orders-label">Items in cart</div>
+        <div class="customer-orders-value">{{ cart_items }}</div>
+        <div class="small text-soft">Ready for checkout</div>
+      </div>
+      <div class="customer-orders-item">
+        <div class="customer-orders-label">Recurring orders</div>
+        <div class="customer-orders-value">{{ recurring_orders_count }}</div>
+        <div class="small text-soft">Saved repeat orders</div>
+      </div>
+      <div class="customer-orders-item">
+        <div class="customer-orders-label">Total orders</div>
+        <div class="customer-orders-value">{{ my_orders_count }}</div>
+        <div class="small text-soft">All order records on your account</div>
       </div>
     </div>
   </section>
@@ -70,7 +76,7 @@
           <tbody>
             {% for o in recent_orders %}
               <tr>
-                <td class="table-id">{{ o.id }}</td>
+                <td class="table-id">#{{ o.id }}</td>
                 <td><span class="badge text-bg-secondary">{{ o.status }}</span></td>
                 <td>£{{ o.total }}</td>
                 <td>{{ o.created_at|date:"d M Y, H:i" }}</td>

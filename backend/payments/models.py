@@ -1,13 +1,3 @@
-# payments/models.py
-# This app stores money-related records.
-#
-# 1) PaymentTransaction:
-#    One record per payment attempt or payment event for an order.
-#    Example: paid, failed, refunded.
-#
-# 2) WeeklySettlement:
-#    One record per producer per week that stores:
-#    gross sales, platform commission, and payout to producer.
 
 from decimal import Decimal
 
@@ -30,7 +20,7 @@ class PaymentTransaction(models.Model):
     """
 
     class Status(models.TextChoices):
-        PENDING = "pending", "Pending"     # created, waiting for provider confirmation
+        PENDING = "pending", "Pending"     
         SUCCEEDED = "succeeded", "Succeeded"
         FAILED = "failed", "Failed"
         REFUNDED = "refunded", "Refunded"
@@ -48,7 +38,6 @@ class PaymentTransaction(models.Model):
         db_index=True,
     )
 
-    # Which system processed it (later you can change names)
     provider = models.CharField(
         max_length=40,
         default="manual",
@@ -76,7 +65,6 @@ class PaymentTransaction(models.Model):
         help_text="Transaction id from the payment provider.",
     )
 
-    # Optional JSON/text for debugging and demos (store provider response)
     raw_response = models.JSONField(
         blank=True,
         null=True,
@@ -120,11 +108,10 @@ class WeeklySettlement(models.Model):
         related_name="weekly_settlements",
     )
 
-    # Week range (you choose your own week boundaries later)
+
     period_start = models.DateField()
     period_end = models.DateField()
 
-    # Totals stored as snapshots
     gross_sales = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
     commission_total = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
     payout_total = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
@@ -160,7 +147,7 @@ class WeeklySettlement(models.Model):
         if self.period_start and self.period_end and self.period_start > self.period_end:
             raise ValidationError("period_start must be before or equal to period_end.")
 
-        # Money cannot be negative
+        
         for field_name in ["gross_sales", "commission_total", "payout_total"]:
             value = getattr(self, field_name, None)
             if value is not None and value < 0:

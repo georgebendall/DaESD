@@ -21,7 +21,7 @@
       </div>
     {% endif %}
 
-    <form method="post" class="row g-3">
+    <form method="post" enctype="multipart/form-data" class="row g-3">
       {% csrf_token %}
 
       <div class="col-md-6">
@@ -40,6 +40,18 @@
         <label class="form-label">Description</label>
         {{ form.description }}
         {% if form.description.errors %}<div class="text-danger small mt-1">{{ form.description.errors }}</div>{% endif %}
+      </div>
+
+      <div class="col-12">
+        <label class="form-label">Product Image</label>
+        {% if product and product.image %}
+          <div class="product-image-upload-preview mb-3">
+            <img src="{{ product.image.url }}" alt="{{ product.name }}">
+          </div>
+        {% endif %}
+        {{ form.image }}
+        <div class="small text-soft mt-1">Upload a product photo from your device. JPG, PNG, and GIF work best.</div>
+        {% if form.image.errors %}<div class="text-danger small mt-1">{{ form.image.errors }}</div>{% endif %}
       </div>
 
       <div class="col-md-4">

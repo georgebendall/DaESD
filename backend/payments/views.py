@@ -1,3 +1,1 @@
-from django.shortcuts import render
-
-# Create your views here.
+"""Payments views are currently handled through the orders and dashboards apps."""

@@ -139,10 +139,10 @@ def after_login(request):
         return redirect("admin_dashboard")
 
     if user.is_producer_user:
-        return redirect("producer_dashboard")
+        return redirect("producer_orders")
 
     if user.is_customer_user:
-        return redirect("customer_dashboard")
+        return redirect("my_orders")
 
     return redirect("home")
 
@@ -179,7 +179,7 @@ def register_customer(request):
 
             login(request, user)
             messages.success(request, "Customer account created successfully.")
-            return redirect("customer_dashboard")
+            return redirect("my_orders")
     else:
         form = CustomerRegistrationForm()
 
@@ -212,7 +212,7 @@ def register_producer(request):
 
             login(request, user)
             messages.success(request, "Producer account created successfully.")
-            return redirect("producer_dashboard")
+            return redirect("producer_orders")
     else:
         form = ProducerRegistrationForm()
 

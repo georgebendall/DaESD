@@ -74,6 +74,12 @@ class Product(models.Model):
     name = models.CharField(max_length=140)
     slug = models.SlugField(max_length=160, blank=True)
     description = models.TextField(blank=True)
+    image = models.ImageField(
+        upload_to="products/",
+        blank=True,
+        null=True,
+        help_text="Optional product image uploaded by the producer.",
+    )
 
     unit = models.CharField(
         max_length=10,
