@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Producer Dashboard | BRFN{% endblock %}
+
+{% block content %}
+<div class="page-shell">
+  <div class="section-card cart-header-card mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div>
+        <h1 class="page-title">Producer Dashboard</h1>
+        <p class="page-subtitle">
+          Overview for {{ producer_profile.business_name|default:request.user.username }}.
+        </p>
+      </div>
+      <div class="d-flex gap-2 flex-wrap">
+        <a href="{% url 'producer_orders' %}" class="btn btn-primary">View Orders</a>
+        <a href="{% url 'producer_settlements' %}" class="btn btn-outline-secondary">Open Settlements</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-md-4">
+      <div class="section-card metric-card h-100">
+        <div class="metric-label">Products Listed</div>
+        <div class="metric-value">{{ product_count }}</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="section-card metric-card h-100">
+        <div class="metric-label">Pending Producer Orders</div>
+        <div class="metric-value">{{ pending_orders_count }}</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="section-card metric-card h-100">
+        <div class="metric-label">Year-to-Date Payout</div>
+        <div class="metric-value">£{{ ytd_payout|floatformat:2 }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-card dashboard-section">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
+      <div>
+        <h2 class="section-title mb-1">Weekly Payment Settlement</h2>
+        <p class="text-soft mb-0">Latest settlement preview from qualifying producer orders.</p>
+      </div>
+    </div>
+
+    {% if latest_settlement %}
+      <div class="row g-4">
+        <div class="col-md-3">
+          <strong>Settlement Period:</strong><br>
+          {{ latest_settlement.period_start }} to {{ latest_settlement.period_end }}
+        </div>
+        <div class="col-md-3">
+          <strong>Gross Sales:</strong><br>
+          £{{ latest_settlement.gross_amount|floatformat:2 }}
+        </div>
+        <div class="col-md-3">
+          <strong>Commission:</strong><br>
+          £{{ latest_settlement.commission_amount|floatformat:2 }}
+        </div>
+        <div class="col-md-3">
+          <strong>Producer Payout:</strong><br>
+          £{{ latest_settlement.payout_amount|floatformat:2 }}
+        </div>
+        <div class="col-md-3">
+          <strong>Payment Status:</strong><br>
+          {{ latest_settlement.payment_status }}
+        </div>
+      </div>
+    {% else %}
+      <div class="alert alert-info mb-0">
+        No qualifying producer orders yet for a settlement preview.
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

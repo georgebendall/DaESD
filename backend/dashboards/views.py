@@ -155,7 +155,9 @@ def _admin_only_or_forbidden(request):
 
 
 def _order_report_date(order):
-    return timezone.localtime(order.created_at).date()
+    # Finance reports are based on the delivery window when available so
+    # admin and producer views line up with settlement periods.
+    return order.delivery_date or timezone.localtime(order.created_at).date()
 
 
 def _order_payment_details(order):
@@ -505,7 +507,26 @@ def producer_dashboard(request):
     redirect_response = _producer_only_or_redirect(request)
     if redirect_response:
         return redirect_response
-    return redirect("producer_orders")
+    settlement_data = _producer_settlement_data(request.user)
+    pending_orders_count = ProducerOrder.objects.filter(
+        producer=request.user,
+        status=ProducerOrder.Status.PENDING,
+    ).count()
+    product_count = Product.objects.filter(producer=request.user).count()
+
+    return render(
+        request,
+        "dashboards/producer_dashboard.html",
+        {
+            "producer_profile": getattr(request.user, "producer_profile", None),
+            "pending_orders_count": pending_orders_count,
+            "product_count": product_count,
+            "latest_settlement": settlement_data["latest_summary"],
+            "ytd_gross": settlement_data["ytd_gross"],
+            "ytd_commission": settlement_data["ytd_commission"],
+            "ytd_payout": settlement_data["ytd_payout"],
+        },
+    )
 
 
 @login_required
